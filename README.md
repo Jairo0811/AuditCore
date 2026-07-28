@@ -1,9 +1,8 @@
-<img src="./docs/images/auditcore-logo.png" alt="Logo de AuditCore" width="360" />
-
-
 <div align="center">
 
+<img src="./docs/images/auditcore-logo.png" alt="Logo de AuditCore" width="360" />
 
+<br />
 
 <img src="https://img.shields.io/badge/ITLA-2017--C2-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
 
@@ -50,19 +49,14 @@ La materia fue principalmente teórica. Sin embargo, la exposición realizada co
 
 ## 👥 Integrantes del grupo original
 
-| Nomre Completo | Matricula |
+| Nombre completo | Matrícula |
 |---|---|
 | 👩‍🎓 **Sianya Jesuína Castillo Perez** | 2015-2734 |
-|👨‍🎓 **Sinver Vladimir Aguiló Flores** | 2015-2872
-| 👩‍🎓 **Leidy Jireth Medina Oleaga** | 2015-2942
-| 👨‍💻 **Francis Jairo Matías Rosario** | 2015-2984
-| 👨‍🎓 **Pedro Arturo de León Parra** |2015-3018
-| 👩‍🎓 **Yeidy Khris Utate Utate** | 2015-3143
-
-
-
-
-
+| 👨‍🎓 **Sinver Vladimir Aguiló Flores** | 2015-2872 |
+| 👩‍🎓 **Leidy Jireth Medina Oleaga** | 2015-2942 |
+| 👨‍💻 **Francis Jairo Matías Rosario** | 2015-2984 |
+| 👨‍🎓 **Pedro Arturo de León Parra** | 2015-3018 |
+| 👩‍🎓 **Yeidy Khris Utate Utate** | 2015-3143 |
 
 > El grupo participó en la exposición académica original. La reconstrucción moderna de AuditCore corresponde a una iniciativa posterior desarrollada por Francis Jairo Matías Rosario.
 
@@ -113,6 +107,12 @@ COBIT será el primer marco de referencia incorporado, por su relación directa 
 
 ### Backend
 
+<p>
+  <img src="https://skillicons.dev/icons?i=dotnet,cs" alt=".NET y C#" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/microsoftsqlserver/microsoftsqlserver-plain.svg" alt="SQL Server" width="48" height="48" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/swagger/swagger-original.svg" alt="Swagger" width="48" height="48" />
+</p>
+
 - ASP.NET Core Web API
 - C#
 - Entity Framework Core
@@ -122,6 +122,10 @@ COBIT será el primer marco de referencia incorporado, por su relación directa 
 - xUnit
 
 ### Frontend
+
+<p>
+  <img src="https://skillicons.dev/icons?i=react,ts,vite" alt="React, TypeScript y Vite" />
+</p>
 
 - React
 - TypeScript
@@ -135,6 +139,10 @@ COBIT será el primer marco de referencia incorporado, por su relación directa 
 - Lucide React
 
 ### Arquitectura e infraestructura
+
+<p>
+  <img src="https://skillicons.dev/icons?i=docker,git,github,azure,aws" alt="Docker, Git, GitHub, Azure y AWS" />
+</p>
 
 - Clean Architecture
 - Principios SOLID
