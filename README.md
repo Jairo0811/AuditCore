@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🛡️ AuditCore
-<img src="https://img.shields.io/badge/ITLA-2016--C3-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
+<img src="https://img.shields.io/badge/ITLA-2017--C2-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
 
 ### Enterprise IT Audit & Compliance Platform
 
