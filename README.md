@@ -5,7 +5,7 @@
 ### Enterprise IT Audit & Compliance Platform
 
 **Audita. Evalúa. Protege.**
-
+<img src="https://img.shields.io/badge/ITLA-2016--C3-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -45,12 +45,19 @@ La materia fue principalmente teórica. Sin embargo, la exposición realizada co
 
 ## 👥 Integrantes del grupo original
 
-- 👩‍🎓 **Sianya Jesuína Castillo Perez** — 2015-2734
-- 👨‍🎓 **Sinver Vladimir Aguiló Flores** — 2015-2872
-- 👩‍🎓 **Leidy Jireth Medina Oleaga** — 2015-2942
-- 👨‍💻 **Francis Jairo Matías Rosario** — 2015-2984
-- 👨‍🎓 **Pedro Arturo de León Parra** — 2015-3018
-- 👩‍🎓 **Yeidy Khris Utate** — 2015-3143
+| Nomre Completo | Matricula |
+|---|---|
+| 👩‍🎓 **Sianya Jesuína Castillo Perez** | 2015-2734 |
+|👨‍🎓 **Sinver Vladimir Aguiló Flores** | 2015-2872
+| 👩‍🎓 **Leidy Jireth Medina Oleaga** | 2015-2942
+| 👨‍💻 **Francis Jairo Matías Rosario** | 2015-2984
+| 👨‍🎓 **Pedro Arturo de León Parra** |2015-3018
+| 👩‍🎓 **Yeidy Khris Utate Utate** | 2015-3143
+
+
+
+
+
 
 > El grupo participó en la exposición académica original. La reconstrucción moderna de AuditCore corresponde a una iniciativa posterior desarrollada por Francis Jairo Matías Rosario.
 
