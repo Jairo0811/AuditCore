@@ -1,0 +1,25 @@
+@"
+# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+
+# React / Node
+node_modules/
+dist/
+.vite/
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# IDE y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+"@ | Set-Content .gitignore

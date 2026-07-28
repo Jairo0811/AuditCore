@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AuditCore.Api/AuditCore.Api.csproj" />
+    <Project Path="src/AuditCore.Application/AuditCore.Application.csproj" />
+    <Project Path="src/AuditCore.Domain/AuditCore.Domain.csproj" />
+    <Project Path="src/AuditCore.Infrastructure/AuditCore.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AuditCore.Application.Tests/AuditCore.Application.Tests.csproj" />
+    <Project Path="tests/AuditCore.Domain.Tests/AuditCore.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
