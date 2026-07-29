@@ -1,14 +1,13 @@
 <div align="center">
 
 <img src="./docs/images/auditcore-logo.jpeg" alt="Logo de AuditCore" width="420" />
-
-<br />
+<br/>
+<br/>
 
 <img src="https://img.shields.io/badge/ITLA-2017--C2-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
 
-### Enterprise IT Audit & Compliance Platform
-
-**Audita. Evalúa. Protege.**
+<br/>
+<br/>
 
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220)
