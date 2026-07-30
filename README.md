@@ -9,14 +9,14 @@
 <br/>
 <br/>
 
-![Estado](https://img.shields.io/badge/Estado-Fase%20inicial%20%7C%20En%20desarrollo-F59E0B?style=for-the-badge)
+![Estado](https://img.shields.io/badge/Estado-Fundación%20técnica%20%7C%20En%20desarrollo-F59E0B?style=for-the-badge)
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![SQL Server](https://img.shields.io/badge/SQL_Server-2025-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Architecture-Clean-14B8A6?style=for-the-badge)
 
-> Estado actual: **Fase inicial de construcción**. La arquitectura base del backend y el proyecto frontend están creados; autenticación, persistencia y módulos funcionales continúan pendientes.
+> Estado actual: **fundación técnica en desarrollo**. La solución backend, la separación por capas y la base modular del frontend están creadas. Persistencia, autenticación y módulos funcionales continúan pendientes.
 
 </div>
 
@@ -194,15 +194,43 @@ AuditCore/
 │   ├── AuditCore.slnx
 │   ├── src/
 │   │   ├── AuditCore.Domain/
+│   │   │   ├── Common/
+│   │   │   ├── Entities/
+│   │   │   ├── Enums/
+│   │   │   ├── Events/
+│   │   │   ├── Exceptions/
+│   │   │   ├── Interfaces/
+│   │   │   └── ValueObjects/
 │   │   ├── AuditCore.Application/
+│   │   │   ├── Common/
+│   │   │   ├── Features/
+│   │   │   └── DependencyInjection.cs
 │   │   ├── AuditCore.Infrastructure/
+│   │   │   ├── Identity/
+│   │   │   ├── Persistence/
+│   │   │   ├── Services/
+│   │   │   └── DependencyInjection.cs
 │   │   └── AuditCore.Api/
+│   │       ├── Controllers/
+│   │       ├── Extensions/
+│   │       ├── Filters/
+│   │       └── Middlewares/
 │   └── tests/
 │       ├── AuditCore.Domain.Tests/
 │       └── AuditCore.Application.Tests/
 │
 └── frontend/
     └── auditcore-web/
+        └── src/
+            ├── app/
+            ├── components/
+            ├── features/
+            ├── hooks/
+            ├── lib/
+            ├── services/
+            ├── styles/
+            ├── types/
+            └── utils/
 ```
 
 Regla de dependencias:
@@ -215,7 +243,7 @@ Domain ← Application ← Infrastructure ← API
 - **Application:** casos de uso, contratos, validaciones y DTOs.
 - **Infrastructure:** persistencia, EF Core, SQL Server y servicios externos.
 - **API:** endpoints, autenticación, middleware, Swagger y composición.
-- **Frontend:** interfaz React desacoplada y desplegable de forma independiente.
+- **Frontend:** interfaz React desacoplada, organizada por funcionalidades y desplegable de forma independiente.
 
 ---
 
@@ -237,22 +265,25 @@ Domain ← Application ← Infrastructure ← API
 
 ## 📦 Estado actual
 
-El proyecto se encuentra en **Fase inicial de construcción**. La base técnica está preparada, pero todavía no constituye una versión funcional del producto.
+El proyecto se encuentra en **fase de fundación técnica**. La arquitectura base está preparada, pero todavía no constituye una versión funcional del producto.
 
 | Área | Estado | Detalle |
 |---|---|---|
 | Solución backend | ✅ Completada | Solución y proyectos principales creados |
 | Clean Architecture | ✅ Configurada | Domain, Application, Infrastructure y API separados |
-| Compilación backend | ✅ Operativa | Compila sin errores ni advertencias |
+| Inyección de dependencias | 🟡 Base creada | Puntos de extensión creados en Application e Infrastructure |
+| Compilación backend | ✅ Operativa | La solución compila correctamente |
 | Swagger / OpenAPI | ✅ Operativo | Documentación inicial de la API disponible |
-| Frontend React | ✅ Inicializado | Proyecto React + TypeScript creado |
+| Frontend React | ✅ Base funcional | Rutas, layout, login temporal, dashboard, Axios y TanStack Query configurados |
+| Estructura frontend | ✅ Modular | Organización por app, components, features, services y styles |
+| Variables de entorno | ✅ Preparadas | Archivo `.env.example` y configuración de `VITE_API_BASE_URL` |
 | Pruebas base | 🟡 Parcial | Estructura creada; cobertura funcional pendiente |
 | Autenticación y autorización | 🚧 Pendiente | JWT, refresh tokens, roles y permisos |
 | Persistencia | 🚧 Pendiente | EF Core, SQL Server, migraciones y seeders |
 | Organizaciones y multiempresa | 🚧 Pendiente | Empresas, sucursales y departamentos |
 | Motor de auditoría | 🚧 Pendiente | Marcos, controles, evaluaciones y evidencias |
 | Hallazgos y riesgos | 🚧 Pendiente | Hallazgos, riesgos, recomendaciones y seguimiento |
-| Reportes y dashboard | 🚧 Pendiente | Indicadores, PDF, Excel y panel ejecutivo |
+| Reportes y dashboard real | 🚧 Pendiente | Indicadores conectados, PDF, Excel y panel ejecutivo |
 | Automatización y despliegue | 🚧 Pendiente | CI/CD y preparación para publicación |
 
 ---
@@ -261,50 +292,54 @@ El proyecto se encuentra en **Fase inicial de construcción**. La base técnica 
 
 ### Fase 1 — Fundación técnica
 
-- Arquitectura backend
-- Proyecto frontend
-- Convenciones de código
-- Swagger
-- Pruebas base
+- [x] Arquitectura backend
+- [x] Proyecto frontend
+- [x] Estructura modular del frontend
+- [x] Configuración inicial de Swagger
+- [x] Configuración base de inyección de dependencias
+- [x] Cliente HTTP y TanStack Query
+- [x] Layout, login temporal y dashboard inicial
+- [ ] Pruebas base con cobertura funcional
+- [ ] Persistencia con EF Core y SQL Server
 
 ### Fase 2 — Identidad y acceso
 
-- Usuarios
-- Roles
-- Permisos
-- JWT
-- Refresh tokens
+- [ ] Usuarios
+- [ ] Roles
+- [ ] Permisos
+- [ ] JWT
+- [ ] Refresh tokens
 
 ### Fase 3 — Organizaciones
 
-- Empresas
-- Sucursales
-- Departamentos
-- Separación multiempresa
+- [ ] Empresas
+- [ ] Sucursales
+- [ ] Departamentos
+- [ ] Separación multiempresa
 
 ### Fase 4 — Motor de auditoría
 
-- Marcos
-- Dominios
-- Controles
-- Preguntas
-- Evaluaciones
+- [ ] Marcos
+- [ ] Dominios
+- [ ] Controles
+- [ ] Preguntas
+- [ ] Evaluaciones
 
 ### Fase 5 — Gestión de resultados
 
-- Evidencias
-- Hallazgos
-- Riesgos
-- Recomendaciones
-- Planes de acción
+- [ ] Evidencias
+- [ ] Hallazgos
+- [ ] Riesgos
+- [ ] Recomendaciones
+- [ ] Planes de acción
 
 ### Fase 6 — Reportes y publicación
 
-- Dashboard
-- PDF
-- Excel
-- CI/CD
-- Azure / AWS
+- [ ] Dashboard conectado a datos reales
+- [ ] PDF
+- [ ] Excel
+- [ ] CI/CD
+- [ ] Azure / AWS
 
 ---
 
@@ -327,10 +362,19 @@ http://localhost:5047/swagger
 
 ### Frontend
 
+Crea el archivo local de configuración a partir del ejemplo:
+
 ```powershell
 cd frontend\auditcore-web
+Copy-Item .\.env.example .\.env.local -Force
 npm install
 npm run dev
+```
+
+Variable utilizada por el frontend:
+
+```env
+VITE_API_BASE_URL=http://localhost:5047/api
 ```
 
 La aplicación estará disponible en:
