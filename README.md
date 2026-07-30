@@ -9,12 +9,15 @@
 <br/>
 <br/>
 
+![Estado](https://img.shields.io/badge/Estado-Fase%20inicial%20%7C%20En%20desarrollo-F59E0B?style=for-the-badge)
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![SQL Server](https://img.shields.io/badge/SQL_Server-2025-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Architecture-Clean-14B8A6?style=for-the-badge)
+
+> Estado actual: **Fase inicial de construcción**. La arquitectura base del backend y el proyecto frontend están creados; autenticación, persistencia y módulos funcionales continúan pendientes.
 
 </div>
 
@@ -204,16 +207,23 @@ Domain ← Application ← Infrastructure ← API
 
 ## 📦 Estado actual
 
-El proyecto se encuentra en fase de construcción inicial.
+El proyecto se encuentra en **Fase inicial de construcción**. La base técnica está preparada, pero todavía no constituye una versión funcional del producto.
 
-- ✅ Solución backend creada
-- ✅ Proyectos de Clean Architecture configurados
-- ✅ Swagger funcionando
-- ✅ Compilación backend sin errores ni advertencias
-- ✅ Proyecto frontend React + TypeScript creado
-- 🚧 Autenticación pendiente
-- 🚧 Base de datos pendiente
-- 🚧 Módulos funcionales pendientes
+| Área | Estado | Detalle |
+|---|---|---|
+| Solución backend | ✅ Completada | Solución y proyectos principales creados |
+| Clean Architecture | ✅ Configurada | Domain, Application, Infrastructure y API separados |
+| Compilación backend | ✅ Operativa | Compila sin errores ni advertencias |
+| Swagger / OpenAPI | ✅ Operativo | Documentación inicial de la API disponible |
+| Frontend React | ✅ Inicializado | Proyecto React + TypeScript creado |
+| Pruebas base | 🟡 Parcial | Estructura creada; cobertura funcional pendiente |
+| Autenticación y autorización | 🚧 Pendiente | JWT, refresh tokens, roles y permisos |
+| Persistencia | 🚧 Pendiente | EF Core, SQL Server, migraciones y seeders |
+| Organizaciones y multiempresa | 🚧 Pendiente | Empresas, sucursales y departamentos |
+| Motor de auditoría | 🚧 Pendiente | Marcos, controles, evaluaciones y evidencias |
+| Hallazgos y riesgos | 🚧 Pendiente | Hallazgos, riesgos, recomendaciones y seguimiento |
+| Reportes y dashboard | 🚧 Pendiente | Indicadores, PDF, Excel y panel ejecutivo |
+| Producción y CI/CD | 🚧 Pendiente | Docker, automatización y despliegue |
 
 ---
 
