@@ -110,8 +110,14 @@ COBIT será el primer marco de referencia incorporado, por su relación directa 
 
 <p>
   <img src="https://skillicons.dev/icons?i=dotnet,cs" alt=".NET y C#" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/microsoftsqlserver/microsoftsqlserver-plain.svg" alt="SQL Server" width="48" height="48" />
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/swagger/swagger-original.svg" alt="Swagger" width="48" height="48" />
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/ASP.NET%20Core-Web%20API-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="ASP.NET Core Web API" />
+  <img src="https://img.shields.io/badge/Entity%20Framework%20Core-Persistencia-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="Entity Framework Core" />
+  <img src="https://img.shields.io/badge/JWT-Bearer-000000?style=flat-square&logo=jsonwebtokens&logoColor=white" alt="JWT Bearer" />
+  <img src="https://img.shields.io/badge/xUnit-Pruebas-5E2B97?style=flat-square&logo=dotnet&logoColor=white" alt="xUnit" />
 </p>
 
 - ASP.NET Core Web API
@@ -128,6 +134,16 @@ COBIT será el primer marco de referencia incorporado, por su relación directa 
   <img src="https://skillicons.dev/icons?i=react,ts,vite" alt="React, TypeScript y Vite" />
 </p>
 
+<p>
+  <img src="https://img.shields.io/badge/React%20Router-Navegación-CA4245?style=flat-square&logo=reactrouter&logoColor=white" alt="React Router" />
+  <img src="https://img.shields.io/badge/TanStack%20Query-Datos-FF4154?style=flat-square&logo=reactquery&logoColor=white" alt="TanStack Query" />
+  <img src="https://img.shields.io/badge/Axios-HTTP-5A29E4?style=flat-square&logo=axios&logoColor=white" alt="Axios" />
+  <img src="https://img.shields.io/badge/React%20Hook%20Form-Formularios-EC5990?style=flat-square&logo=reacthookform&logoColor=white" alt="React Hook Form" />
+  <img src="https://img.shields.io/badge/Zod-Validación-3E67B1?style=flat-square" alt="Zod" />
+  <img src="https://img.shields.io/badge/Recharts-Gráficas-22B5BF?style=flat-square" alt="Recharts" />
+  <img src="https://img.shields.io/badge/Lucide-Iconos-F56565?style=flat-square" alt="Lucide React" />
+</p>
+
 - React
 - TypeScript
 - Vite
@@ -139,10 +155,27 @@ COBIT será el primer marco de referencia incorporado, por su relación directa 
 - Recharts
 - Lucide React
 
+### Base de datos
+
+<p>
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/microsoftsqlserver/microsoftsqlserver-plain.svg" alt="SQL Server" width="48" height="48" />
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Microsoft%20SQL%20Server-2025-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white" alt="Microsoft SQL Server 2025" />
+  <img src="https://img.shields.io/badge/Migraciones-EF%20Core-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="Migraciones EF Core" />
+</p>
+
 ### Arquitectura y herramientas
 
 <p>
   <img src="https://skillicons.dev/icons?i=git,github,azure,aws" alt="Git, GitHub, Azure y AWS" />
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Clean%20Architecture-Modular-14B8A6?style=flat-square" alt="Clean Architecture" />
+  <img src="https://img.shields.io/badge/SOLID-Principios-0F172A?style=flat-square" alt="SOLID" />
+  <img src="https://img.shields.io/badge/OpenAPI-Documentación-6BA539?style=flat-square&logo=openapiinitiative&logoColor=white" alt="OpenAPI" />
 </p>
 
 - Clean Architecture
