@@ -1,3 +1,5 @@
+using AuditCore.Api.Configuration;
+
 namespace AuditCore.Api;
 
 public static class Program
@@ -6,27 +8,11 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddControllers();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddAuditCoreApi(builder.Configuration);
 
         var app = builder.Build();
 
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
-        else
-        {
-            app.UseHsts();
-        }
-
-        app.UseHttpsRedirection();
-
-        app.UseAuthorization();
-
-        app.MapControllers();
+        app.UseAuditCorePipeline();
 
         app.Run();
     }
