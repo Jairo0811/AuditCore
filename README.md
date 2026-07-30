@@ -14,7 +14,6 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![SQL Server](https://img.shields.io/badge/SQL_Server-2025-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Architecture-Clean-14B8A6?style=for-the-badge)
 
 > Estado actual: **Fase inicial de construcción**. La arquitectura base del backend y el proyecto frontend están creados; autenticación, persistencia y módulos funcionales continúan pendientes.
@@ -140,16 +139,14 @@ COBIT será el primer marco de referencia incorporado, por su relación directa 
 - Recharts
 - Lucide React
 
-### Arquitectura e infraestructura
+### Arquitectura y herramientas
 
 <p>
-  <img src="https://skillicons.dev/icons?i=docker,git,github,azure,aws" alt="Docker, Git, GitHub, Azure y AWS" />
+  <img src="https://skillicons.dev/icons?i=git,github,azure,aws" alt="Git, GitHub, Azure y AWS" />
 </p>
 
 - Clean Architecture
 - Principios SOLID
-- Docker
-- Docker Compose
 - Git y GitHub
 - Azure Ready
 - AWS Ready
@@ -223,7 +220,7 @@ El proyecto se encuentra en **Fase inicial de construcción**. La base técnica 
 | Motor de auditoría | 🚧 Pendiente | Marcos, controles, evaluaciones y evidencias |
 | Hallazgos y riesgos | 🚧 Pendiente | Hallazgos, riesgos, recomendaciones y seguimiento |
 | Reportes y dashboard | 🚧 Pendiente | Indicadores, PDF, Excel y panel ejecutivo |
-| Producción y CI/CD | 🚧 Pendiente | Docker, automatización y despliegue |
+| Automatización y despliegue | 🚧 Pendiente | CI/CD y preparación para publicación |
 
 ---
 
@@ -268,12 +265,11 @@ El proyecto se encuentra en **Fase inicial de construcción**. La base técnica 
 - Recomendaciones
 - Planes de acción
 
-### Fase 6 — Reportes y producción
+### Fase 6 — Reportes y publicación
 
 - Dashboard
 - PDF
 - Excel
-- Docker
 - CI/CD
 - Azure / AWS
 
