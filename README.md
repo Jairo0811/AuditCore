@@ -57,7 +57,7 @@ La materia fue principalmente teórica. Sin embargo, la exposición realizada co
 | 👩‍🎓 **Leidy Jireth Medina Oleaga** | 2015-2942 |
 | 👨‍💻 **Francis Jairo Matías Rosario** | 2015-2984 |
 | 👨‍🎓 **Pedro Arturo de León Parra** | 2015-3018 |
-| 👩‍🎓 **Yeidy Khris Utate Utate** | 2015-3143 |
+| 👩‍🎓 **Yeidy Khris Utate** | 2015-3143 |
 
 > El grupo participó en la exposición académica original. La reconstrucción moderna de AuditCore corresponde a una iniciativa posterior desarrollada por Francis Jairo Matías Rosario.
 
