@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/images/auditcore-logo.jpeg" alt="Logo de AuditCore" width="520" />
+<img src="./docs/images/auditcore-logo.png" alt="Logo de AuditCore" width="520" />
 <br/>
 <br/>
 
