@@ -11,6 +11,12 @@ public interface IAuditCoreDbContext
 
     DbSet<Department> Departments { get; }
 
+    DbSet<Audit> Audits { get; }
+
+    DbSet<Risk> Risks { get; }
+
+    DbSet<Finding> Findings { get; }
+
     DbSet<User> Users { get; }
 
     DbSet<Role> Roles { get; }

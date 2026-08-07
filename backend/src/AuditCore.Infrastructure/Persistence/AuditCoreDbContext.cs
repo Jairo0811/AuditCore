@@ -23,6 +23,15 @@ public sealed class AuditCoreDbContext
     public DbSet<Department> Departments =>
         Set<Department>();
 
+    public DbSet<Audit> Audits =>
+        Set<Audit>();
+
+    public DbSet<Risk> Risks =>
+        Set<Risk>();
+
+    public DbSet<Finding> Findings =>
+        Set<Finding>();
+
     public DbSet<User> Users =>
         Set<User>();
 
@@ -69,13 +78,15 @@ public sealed class AuditCoreDbContext
         {
             if (entry.State == EntityState.Added)
             {
-                entry.Property(nameof(BaseAuditableEntity.CreatedAtUtc))
+                entry.Property(
+                        nameof(BaseAuditableEntity.CreatedAtUtc))
                     .CurrentValue = now;
             }
 
             if (entry.State == EntityState.Modified)
             {
-                entry.Property(nameof(BaseAuditableEntity.UpdatedAtUtc))
+                entry.Property(
+                        nameof(BaseAuditableEntity.UpdatedAtUtc))
                     .CurrentValue = now;
             }
         }
@@ -99,7 +110,9 @@ public sealed class AuditCoreDbContext
                     System.Reflection.BindingFlags.Static)!
                 .MakeGenericMethod(entityType.ClrType);
 
-            method.Invoke(null, new object[] { modelBuilder });
+            method.Invoke(
+                null,
+                new object[] { modelBuilder });
         }
     }
 
