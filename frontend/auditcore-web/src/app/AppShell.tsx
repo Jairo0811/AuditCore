@@ -1,4 +1,18 @@
-import { BarChart3, ClipboardCheck, FileSearch, LogOut, Menu, ShieldAlert, X } from "lucide-react";
+import {
+  BarChart3,
+  Building2,
+  ClipboardCheck,
+  FileArchive,
+  FileSearch,
+  FileText,
+  ListChecks,
+  LogOut,
+  Menu,
+  ShieldAlert,
+  ShieldCheck,
+  Users,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { getCurrentUser, logout } from "../features/auth/auth";
@@ -8,6 +22,13 @@ const navigation = [
   { to: "/audits", label: "Auditorías", icon: ClipboardCheck },
   { to: "/risks", label: "Riesgos", icon: ShieldAlert },
   { to: "/findings", label: "Hallazgos", icon: FileSearch },
+  { to: "/evidence", label: "Evidencias", icon: FileArchive },
+  { to: "/action-plans", label: "Planes de acción", icon: ListChecks },
+  { to: "/frameworks", label: "Marcos y controles", icon: ShieldCheck },
+  { to: "/reports", label: "Reportes", icon: FileText },
+  { to: "/organizations", label: "Organizaciones", icon: Building2 },
+  { to: "/users", label: "Usuarios", icon: Users },
+  { to: "/roles", label: "Roles", icon: ShieldCheck },
 ];
 
 export function AppShell() {
@@ -36,12 +57,7 @@ export function AppShell() {
             <span>AUDIT<strong>CORE</strong></span>
           </NavLink>
 
-          <button
-            className="sidebar-close"
-            type="button"
-            aria-label="Cerrar menú"
-            onClick={() => setMenuOpen(false)}
-          >
+          <button className="sidebar-close" type="button" aria-label="Cerrar menú" onClick={() => setMenuOpen(false)}>
             <X size={20} />
           </button>
         </div>
