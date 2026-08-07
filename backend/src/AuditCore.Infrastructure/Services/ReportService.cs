@@ -156,6 +156,10 @@ public sealed class ReportService : IReportService
     }
 
     private static string Xml(string value) => new XText(value).ToString();
-    private static string PdfText(string value) => new(value.Select(ch => ch is >= ' ' and <= '~' ? ch : '?').ToArray())
-        .Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)");
+
+    private static string PdfText(string value) =>
+        new string(value.Select(ch => ch is >= ' ' and <= '~' ? ch : '?').ToArray())
+            .Replace("\\", "\\\\")
+            .Replace("(", "\\(")
+            .Replace(")", "\\)");
 }
