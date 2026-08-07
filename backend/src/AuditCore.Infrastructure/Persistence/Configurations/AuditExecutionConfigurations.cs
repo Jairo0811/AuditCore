@@ -89,3 +89,31 @@ public sealed class ControlEvaluationConfiguration : IEntityTypeConfiguration<Co
         builder.HasOne(x => x.EvaluatedByUser).WithMany().HasForeignKey(x => x.EvaluatedByUserId).OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+public sealed class ControlQuestionConfiguration : IEntityTypeConfiguration<ControlQuestion>
+{
+    public void Configure(EntityTypeBuilder<ControlQuestion> builder)
+    {
+        builder.ToTable("ControlQuestions");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Text).HasMaxLength(1000).IsRequired();
+        builder.Property(x => x.Weight).HasPrecision(5, 2).IsRequired();
+        builder.Property(x => x.RowVersion).IsRowVersion();
+        builder.HasIndex(x => new { x.ControlId, x.Order }).IsUnique();
+        builder.HasOne(x => x.Control).WithMany().HasForeignKey(x => x.ControlId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class ControlAnswerConfiguration : IEntityTypeConfiguration<ControlAnswer>
+{
+    public void Configure(EntityTypeBuilder<ControlAnswer> builder)
+    {
+        builder.ToTable("ControlAnswers");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Notes).HasMaxLength(2000);
+        builder.Property(x => x.RowVersion).IsRowVersion();
+        builder.HasIndex(x => new { x.EvaluationId, x.QuestionId }).IsUnique();
+        builder.HasOne(x => x.Evaluation).WithMany().HasForeignKey(x => x.EvaluationId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.Question).WithMany().HasForeignKey(x => x.QuestionId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
