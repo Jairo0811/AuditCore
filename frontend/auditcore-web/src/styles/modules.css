@@ -1,0 +1,45 @@
+.module-page { min-height: 100vh; padding: 2.25rem; }
+.module-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.5rem; }
+.module-header h1 { margin: 0; font-size: clamp(2rem,4vw,2.6rem); }
+.module-header p:last-child { color: var(--muted); }
+.module-header-actions { display: flex; gap: .65rem; flex-wrap: wrap; }
+.module-header button, .resource-form button, .inline-form button, .report-card button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; padding: 0 .9rem; border: 1px solid var(--primary); border-radius: 10px; color: #041c19; background: linear-gradient(135deg,#5eead4,#14b8a6); font-weight: 800; }
+.secondary-button { color: var(--text) !important; border-color: var(--border) !important; background: var(--surface) !important; }
+.data-panel { margin-top: 1rem; border: 1px solid var(--border); border-radius: 18px; background: rgba(10,25,43,.82); overflow: hidden; }
+.data-panel h2 { padding: 1.2rem 1.25rem 0; margin: 0; font-size: 1.1rem; }
+.table-scroll { width: 100%; overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+.data-table th, .data-table td { padding: .85rem 1rem; border-bottom: 1px solid rgba(31,57,84,.72); text-align: left; vertical-align: top; }
+.data-table th { color: #a9bdd0; font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; background: rgba(6,17,31,.55); }
+.data-table td { color: #d8e5ef; font-size: .86rem; }
+.data-table tbody tr:hover { background: rgba(20,184,166,.035); }
+.row-actions { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.icon-button, .text-action { min-height: 32px; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); background: rgba(6,17,31,.65); }
+.icon-button { width: 34px; display: inline-grid; place-items: center; padding: 0; }
+.text-action { padding: 0 .6rem; font-size: .76rem; }
+.icon-button:hover, .text-action:hover { color: var(--text); border-color: #365675; }
+.danger-button { color: #fca5a5; }
+.empty-table, .panel-state { padding: 2rem; color: var(--muted); text-align: center; }
+.error-message, .form-error { color: #fecaca; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 1rem; background: rgba(0,0,0,.68); backdrop-filter: blur(4px); }
+.modal-card { width: min(720px,100%); max-height: 90vh; overflow: auto; border: 1px solid var(--border); border-radius: 18px; background: #081625; box-shadow: 0 28px 80px rgba(0,0,0,.42); }
+.modal-card > header { display: flex; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.25rem .4rem; }
+.modal-card h2 { margin: 0; }
+.resource-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; padding: 1.25rem; }
+.resource-form label, .inline-form label { display: grid; gap: .45rem; color: #c9d8e5; font-size: .8rem; font-weight: 650; }
+.resource-form label:has(textarea), .resource-form .form-error, .resource-form .form-actions { grid-column: 1 / -1; }
+.resource-form input, .resource-form textarea, .resource-form select, .inline-form input { width: 100%; min-height: 44px; padding: .7rem .8rem; border: 1px solid var(--border); border-radius: 10px; outline: none; color: var(--text); background: var(--surface); }
+.resource-form textarea { min-height: 100px; resize: vertical; }
+.resource-form input:focus, .resource-form textarea:focus, .resource-form select:focus, .inline-form input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(20,184,166,.08); }
+.form-actions { display: flex; justify-content: flex-end; gap: .7rem; padding-top: .25rem; }
+.upload-panel { padding-bottom: 1.25rem; }
+.inline-form { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)) auto; gap: .8rem; align-items: end; padding: 1.25rem; }
+.report-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; margin-top: 1.5rem; }
+.report-card { min-height: 220px; display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: 18px; background: linear-gradient(145deg,rgba(13,32,54,.96),rgba(8,24,41,.96)); }
+.report-card span, .report-card strong { display: block; }
+.report-card span { color: var(--muted); font-size: .8rem; }
+.report-card strong { margin-top: .35rem; font-size: 1.5rem; }
+.report-card p { color: var(--muted); line-height: 1.55; }
+
+@media (max-width: 1100px) { .inline-form { grid-template-columns: repeat(2,minmax(0,1fr)); } .report-grid { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .module-page { padding: 1.25rem; } .module-header { align-items: flex-start; flex-direction: column; } .resource-form, .inline-form { grid-template-columns: 1fr; } .resource-form label:has(textarea) { grid-column: auto; } }
