@@ -16,6 +16,8 @@ public interface IAuditCoreDbContext
     DbSet<ControlFramework> ControlFrameworks { get; }
     DbSet<ControlDefinition> ControlDefinitions { get; }
     DbSet<ControlEvaluation> ControlEvaluations { get; }
+    DbSet<ControlQuestion> ControlQuestions { get; }
+    DbSet<ControlAnswer> ControlAnswers { get; }
     DbSet<User> Users { get; }
     DbSet<Role> Roles { get; }
     DbSet<Permission> Permissions { get; }
