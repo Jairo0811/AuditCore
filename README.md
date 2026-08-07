@@ -5,7 +5,10 @@
 <br />
 <br />
 
+<div align="center">
 <img src="https://img.shields.io/badge/ITLA-2017--C2-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
+<div/>
+
 <img src="https://img.shields.io/badge/Estado-Full%20Stack%20completado-22C55E?style=for-the-badge" alt="Estado Full Stack completado" />
 <img src="https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt="ASP.NET Core 10" />
 <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220" alt="React 19" />
