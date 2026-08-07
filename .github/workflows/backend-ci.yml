@@ -1,0 +1,67 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      ASPNETCORE_ENVIRONMENT: Testing
+      Jwt__Key: AuditCore-CI-Signing-Key-2026-At-Least-32-Characters
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore backend/AuditCore.slnx
+
+      - name: Build
+        run: dotnet build backend/AuditCore.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test backend/AuditCore.slnx --configuration Release --no-build --logger 'console;verbosity=normal'
+
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef --version 10.0.10
+
+      - name: Validate migration chain
+        working-directory: backend
+        run: >-
+          dotnet ef migrations script
+          --project ./src/AuditCore.Infrastructure/AuditCore.Infrastructure.csproj
+          --startup-project ./src/AuditCore.Api/AuditCore.Api.csproj
+          --context AuditCoreDbContext
+          --no-build
+          --configuration Release
+          --output ./AuditCore.Migrations.sql
+
+      - name: Validate model snapshot
+        working-directory: backend
+        run: >-
+          dotnet ef migrations has-pending-model-changes
+          --project ./src/AuditCore.Infrastructure/AuditCore.Infrastructure.csproj
+          --startup-project ./src/AuditCore.Api/AuditCore.Api.csproj
+          --context AuditCoreDbContext
+          --no-build
+          --configuration Release
