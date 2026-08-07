@@ -47,6 +47,20 @@ public sealed class AuditExecutionModuleTests
     }
 
     [Fact]
+    public void ControlQuestion_ShouldValidateOrder()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new ControlQuestion(Guid.NewGuid(), "¿Existe el control?", 25, 0));
+    }
+
+    [Fact]
+    public void ControlAnswer_ShouldValidateScore()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new ControlAnswer(Guid.NewGuid(), Guid.NewGuid(), 101));
+    }
+
+    [Fact]
     public void Evaluation_ShouldAcceptNotApplicableWithoutScore()
     {
         var evaluation = new ControlEvaluation(Guid.NewGuid(), Guid.NewGuid());
