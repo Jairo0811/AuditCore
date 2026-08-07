@@ -3,17 +3,21 @@
 <img src="./docs/images/auditcore-logo.png" alt="Logo de AuditCore" width="520" />
 
 <br />
+<br />
 
 <img src="https://img.shields.io/badge/ITLA-2017--C2-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
-![Estado](https://img.shields.io/badge/Estado-Full%20Stack%20completado-22C55E?style=for-the-badge)
-![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220)
-![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![SQL Server](https://img.shields.io/badge/SQL_Server-2025-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)
-![Architecture](https://img.shields.io/badge/Architecture-Clean-14B8A6?style=for-the-badge)
-![CI](https://img.shields.io/badge/CI-Passing-22C55E?style=for-the-badge&logo=githubactions&logoColor=white)
+<img src="https://img.shields.io/badge/Estado-Full%20Stack%20completado-22C55E?style=for-the-badge" alt="Estado Full Stack completado" />
+<img src="https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt="ASP.NET Core 10" />
+<img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220" alt="React 19" />
+<img src="https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6" />
+<img src="https://img.shields.io/badge/SQL_Server-2025-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white" alt="SQL Server 2025" />
+<img src="https://img.shields.io/badge/Architecture-Clean-14B8A6?style=for-the-badge" alt="Clean Architecture" />
+<img src="https://img.shields.io/badge/CI-Passing-22C55E?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI Passing" />
 
-**Plataforma full stack para auditoría de TI, cumplimiento, riesgos, evidencias, hallazgos y planes de acción.**
+<br />
+<br />
+
+<strong>Plataforma full stack para auditoría de TI, cumplimiento, riesgos, evidencias, hallazgos y planes de acción.</strong>
 
 </div>
 
