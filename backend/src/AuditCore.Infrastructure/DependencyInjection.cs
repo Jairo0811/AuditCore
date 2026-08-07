@@ -36,8 +36,10 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("La cadena de conexión 'DefaultConnection' no está configurada.");
 
-        services.AddDbContext<AuditCoreDbContext>(options =>
-            options.UseSqlServer(connectionString, sqlServerOptions => sqlServerOptions.EnableRetryOnFailure()));
+        services.AddScoped<AuditActorInterceptor>();
+        services.AddDbContext<AuditCoreDbContext>((serviceProvider, options) =>
+            options.UseSqlServer(connectionString, sqlServerOptions => sqlServerOptions.EnableRetryOnFailure())
+                .AddInterceptors(serviceProvider.GetRequiredService<AuditActorInterceptor>()));
 
         services.AddScoped<IAuditCoreDbContext>(sp => sp.GetRequiredService<AuditCoreDbContext>());
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
