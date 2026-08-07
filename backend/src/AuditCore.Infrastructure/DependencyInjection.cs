@@ -41,6 +41,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAuditCoreDbContext>(sp => sp.GetRequiredService<AuditCoreDbContext>());
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+        services.AddScoped<TenantGuard>();
         services.AddScoped<AuditCoreSeeder>();
         services.AddScoped<DatabaseInitializer>();
 
