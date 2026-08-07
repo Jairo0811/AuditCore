@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AuditCore.Application.Common.Interfaces;
 using AuditCore.Application.Features.Users;
 using AuditCore.Application.Features.Users.Models;
@@ -10,6 +11,11 @@ namespace AuditCore.Infrastructure.Services;
 
 public sealed class UserService : IUserService
 {
+    private static readonly Expression<Func<User, UserDto>> Projection = x => new UserDto(
+        x.Id, x.OrganizationId, x.Organization.Name, x.FirstName, x.LastName,
+        x.FirstName + " " + x.LastName, x.Email, x.IsActive, x.IsLocked, x.LastLoginAtUtc,
+        x.UserRoles.Select(ur => ur.Role.Code).OrderBy(code => code).ToArray());
+
     private readonly IAuditCoreDbContext _dbContext;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly TenantGuard _tenantGuard;
@@ -32,8 +38,7 @@ public sealed class UserService : IUserService
         }
         var query = _dbContext.Users.AsNoTracking().AsQueryable();
         if (organizationId.HasValue) query = query.Where(x => x.OrganizationId == organizationId.Value);
-        return await query.OrderBy(x => x.FirstName).ThenBy(x => x.LastName)
-            .Select(x => MapProjection(x)).ToListAsync(cancellationToken);
+        return await query.OrderBy(x => x.FirstName).ThenBy(x => x.LastName).Select(Projection).ToListAsync(cancellationToken);
     }
 
     public async Task<UserDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -41,7 +46,7 @@ public sealed class UserService : IUserService
         var query = _dbContext.Users.AsNoTracking().Where(x => x.Id == id);
         var restricted = _tenantGuard.RestrictedOrganizationId;
         if (restricted.HasValue) query = query.Where(x => x.OrganizationId == restricted.Value);
-        return await query.Select(x => MapProjection(x)).SingleOrDefaultAsync(cancellationToken);
+        return await query.Select(Projection).SingleOrDefaultAsync(cancellationToken);
     }
 
     public async Task<UserDto> CreateAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
@@ -136,11 +141,6 @@ public sealed class UserService : IUserService
         foreach (var roleId in distinctRoleIds) _dbContext.UserRoles.Add(new UserRole(userId, roleId));
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
-
-    private static UserDto MapProjection(User x) => new(
-        x.Id, x.OrganizationId, x.Organization.Name, x.FirstName, x.LastName,
-        x.FirstName + " " + x.LastName, x.Email, x.IsActive, x.IsLocked, x.LastLoginAtUtc,
-        x.UserRoles.Select(ur => ur.Role.Code).OrderBy(code => code).ToArray());
 
     private static string NormalizeEmail(string email)
     {
