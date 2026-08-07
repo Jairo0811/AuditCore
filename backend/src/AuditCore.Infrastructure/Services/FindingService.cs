@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AuditCore.Application.Common.Interfaces;
 using AuditCore.Application.Features.Findings;
 using AuditCore.Application.Features.Findings.Models;
@@ -8,6 +9,13 @@ namespace AuditCore.Infrastructure.Services;
 
 public sealed class FindingService : IFindingService
 {
+    private static readonly Expression<Func<Finding, FindingDto>> Projection = x => new FindingDto(
+        x.Id, x.AuditId, x.Audit.Code, x.RiskId, x.Risk != null ? x.Risk.Code : null,
+        x.Code, x.Title, x.Condition, x.Criteria, x.Cause, x.Effect, x.Recommendation,
+        x.Severity, x.ResponsibleUserId,
+        x.ResponsibleUser != null ? x.ResponsibleUser.FirstName + " " + x.ResponsibleUser.LastName : null,
+        x.DueDateUtc, x.Status, x.IsActive);
+
     private readonly IAuditCoreDbContext _dbContext;
     private readonly TenantGuard _tenantGuard;
 
@@ -25,10 +33,7 @@ public sealed class FindingService : IFindingService
         if (auditId.HasValue) query = query.Where(x => x.AuditId == auditId.Value);
         if (status.HasValue) query = query.Where(x => x.Status == status.Value);
         if (severity.HasValue) query = query.Where(x => x.Severity == severity.Value);
-
-        return await query.OrderByDescending(x => x.CreatedAtUtc)
-            .Select(x => Map(x))
-            .ToListAsync(cancellationToken);
+        return await query.OrderByDescending(x => x.CreatedAtUtc).Select(Projection).ToListAsync(cancellationToken);
     }
 
     public async Task<FindingDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -36,7 +41,7 @@ public sealed class FindingService : IFindingService
         var query = _dbContext.Findings.AsNoTracking().Where(x => x.Id == id);
         var restricted = _tenantGuard.RestrictedOrganizationId;
         if (restricted.HasValue) query = query.Where(x => x.Audit.OrganizationId == restricted.Value);
-        return await query.Select(x => Map(x)).SingleOrDefaultAsync(cancellationToken);
+        return await query.Select(Projection).SingleOrDefaultAsync(cancellationToken);
     }
 
     public async Task<FindingDto> CreateAsync(CreateFindingRequest request, CancellationToken cancellationToken = default)
@@ -49,7 +54,6 @@ public sealed class FindingService : IFindingService
         var code = NormalizeCode(request.Code);
         if (await _dbContext.Findings.AnyAsync(x => x.AuditId == request.AuditId && x.Code == code, cancellationToken))
             throw new InvalidOperationException($"Ya existe un hallazgo con el código '{code}' en esta auditoría.");
-
         var finding = new Finding(request.AuditId, code, request.Title, request.Condition, request.Criteria,
             request.Cause, request.Effect, request.Recommendation, request.Severity,
             request.RiskId, request.ResponsibleUserId, request.DueDateUtc);
@@ -69,7 +73,6 @@ public sealed class FindingService : IFindingService
         var code = NormalizeCode(request.Code);
         if (await _dbContext.Findings.AnyAsync(x => x.Id != id && x.AuditId == finding.AuditId && x.Code == code, cancellationToken))
             throw new InvalidOperationException($"Ya existe otro hallazgo con el código '{code}' en esta auditoría.");
-
         finding.Update(code, request.Title, request.Condition, request.Criteria, request.Cause, request.Effect,
             request.Recommendation, request.Severity, request.RiskId, request.ResponsibleUserId, request.DueDateUtc);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -108,13 +111,6 @@ public sealed class FindingService : IFindingService
         if (user.OrganizationId != organizationId || !user.IsActive || user.IsLocked)
             throw new InvalidOperationException("El responsable debe pertenecer a la organización y estar activo/desbloqueado.");
     }
-
-    private static FindingDto Map(Finding x) => new(
-        x.Id, x.AuditId, x.Audit.Code, x.RiskId, x.Risk != null ? x.Risk.Code : null,
-        x.Code, x.Title, x.Condition, x.Criteria, x.Cause, x.Effect, x.Recommendation,
-        x.Severity, x.ResponsibleUserId,
-        x.ResponsibleUser != null ? x.ResponsibleUser.FirstName + " " + x.ResponsibleUser.LastName : null,
-        x.DueDateUtc, x.Status, x.IsActive);
 
     private static string NormalizeCode(string code)
     {
