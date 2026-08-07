@@ -20,6 +20,8 @@ public sealed class AuditCoreDbContext : DbContext, IAuditCoreDbContext
     public DbSet<ControlFramework> ControlFrameworks => Set<ControlFramework>();
     public DbSet<ControlDefinition> ControlDefinitions => Set<ControlDefinition>();
     public DbSet<ControlEvaluation> ControlEvaluations => Set<ControlEvaluation>();
+    public DbSet<ControlQuestion> ControlQuestions => Set<ControlQuestion>();
+    public DbSet<ControlAnswer> ControlAnswers => Set<ControlAnswer>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Permission> Permissions => Set<Permission>();
