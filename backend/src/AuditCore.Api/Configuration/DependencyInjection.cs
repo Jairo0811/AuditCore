@@ -1,5 +1,7 @@
 using System.Threading.RateLimiting;
+using AuditCore.Api.Services;
 using AuditCore.Application;
+using AuditCore.Application.Common.Security;
 using AuditCore.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -18,6 +20,8 @@ public static class DependencyInjection
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
         services.AddHealthChecks();
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 
         var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
             ?? ["http://localhost:5173", "https://localhost:5173"];
