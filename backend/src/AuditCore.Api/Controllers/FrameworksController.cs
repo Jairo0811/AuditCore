@@ -49,6 +49,24 @@ public sealed class FrameworksController : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
+    [HttpGet("controls/{controlId:guid}/questions")]
+    [Authorize(Policy = PermissionCodes.FrameworksView)]
+    public async Task<ActionResult<IReadOnlyCollection<QuestionDto>>> GetQuestions(Guid controlId, CancellationToken cancellationToken) =>
+        Ok(await _service.GetQuestionsAsync(controlId, cancellationToken));
+
+    [HttpPost("questions")]
+    [Authorize(Policy = PermissionCodes.FrameworksManage)]
+    public async Task<ActionResult<QuestionDto>> CreateQuestion(CreateQuestionRequest request, CancellationToken cancellationToken) =>
+        Ok(await _service.CreateQuestionAsync(request, cancellationToken));
+
+    [HttpPut("questions/{id:guid}")]
+    [Authorize(Policy = PermissionCodes.FrameworksManage)]
+    public async Task<ActionResult<QuestionDto>> UpdateQuestion(Guid id, UpdateQuestionRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _service.UpdateQuestionAsync(id, request, cancellationToken);
+        return result is null ? NotFound() : Ok(result);
+    }
+
     [HttpGet("evaluations/{auditId:guid}")]
     [Authorize(Policy = PermissionCodes.AuditsView)]
     public async Task<ActionResult<IReadOnlyCollection<EvaluationDto>>> GetEvaluations(Guid auditId, CancellationToken cancellationToken) =>
@@ -58,4 +76,14 @@ public sealed class FrameworksController : ControllerBase
     [Authorize(Policy = PermissionCodes.AuditsExecute)]
     public async Task<ActionResult<EvaluationDto>> Evaluate(Guid auditId, Guid controlId, EvaluateControlRequest request, CancellationToken cancellationToken) =>
         Ok(await _service.EvaluateAsync(auditId, controlId, request, cancellationToken));
+
+    [HttpGet("evaluations/{evaluationId:guid}/answers")]
+    [Authorize(Policy = PermissionCodes.AuditsView)]
+    public async Task<ActionResult<IReadOnlyCollection<AnswerDto>>> GetAnswers(Guid evaluationId, CancellationToken cancellationToken) =>
+        Ok(await _service.GetAnswersAsync(evaluationId, cancellationToken));
+
+    [HttpPut("evaluations/{evaluationId:guid}/answers/{questionId:guid}")]
+    [Authorize(Policy = PermissionCodes.AuditsExecute)]
+    public async Task<ActionResult<AnswerDto>> UpsertAnswer(Guid evaluationId, Guid questionId, UpsertAnswerRequest request, CancellationToken cancellationToken) =>
+        Ok(await _service.UpsertAnswerAsync(evaluationId, questionId, request, cancellationToken));
 }
