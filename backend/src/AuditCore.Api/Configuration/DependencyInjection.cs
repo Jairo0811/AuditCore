@@ -33,12 +33,14 @@ public static class DependencyInjection
                     .AllowAnyMethod()
                     .AllowCredentials()));
 
+        var authPermitLimit = configuration.GetValue<int?>("RateLimiting:AuthPermitLimit") ?? 10;
+
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.AddFixedWindowLimiter("auth", limiter =>
             {
-                limiter.PermitLimit = 10;
+                limiter.PermitLimit = authPermitLimit;
                 limiter.Window = TimeSpan.FromMinutes(1);
                 limiter.QueueLimit = 0;
                 limiter.AutoReplenishment = true;
