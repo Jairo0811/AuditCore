@@ -55,3 +55,13 @@ jobs:
           --no-build
           --configuration Release
           --output ./AuditCore.Migrations.sql
+
+      - name: Validate model snapshot
+        working-directory: backend
+        run: >-
+          dotnet ef migrations has-pending-model-changes
+          --project ./src/AuditCore.Infrastructure/AuditCore.Infrastructure.csproj
+          --startup-project ./src/AuditCore.Api/AuditCore.Api.csproj
+          --context AuditCoreDbContext
+          --no-build
+          --configuration Release
