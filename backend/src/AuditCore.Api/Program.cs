@@ -1,19 +1,25 @@
-using AuditCore.Api.Configuration;
+﻿using AuditCore.Api.Configuration;
 
 namespace AuditCore.Api;
 
-public static class Program
+public partial class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddAuditCoreApi(builder.Configuration);
+        builder.Services.AddAuditCoreApi(
+            builder.Configuration);
 
         var app = builder.Build();
 
+        if (!app.Environment.IsEnvironment("Testing"))
+        {
+            await app.InitializeAuditCoreDatabaseAsync();
+        }
+
         app.UseAuditCorePipeline();
 
-        app.Run();
+        await app.RunAsync();
     }
 }

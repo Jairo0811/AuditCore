@@ -1,3 +1,6 @@
+﻿using AuditCore.Application;
+using AuditCore.Infrastructure;
+
 namespace AuditCore.Api.Configuration;
 
 public static class DependencyInjection
@@ -22,8 +25,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Cada módulo funcional registrará aquí su capa Application e Infrastructure.
-        // Ejemplos futuros: Identity, Organizations, Audits, Risks y Reporting.
+        services.AddApplication();
+        services.AddInfrastructure(configuration);
+
         return services;
     }
 }

@@ -6,6 +6,7 @@
     <Project Path="src/AuditCore.Infrastructure/AuditCore.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/AuditCore.Api.IntegrationTests/AuditCore.Api.IntegrationTests.csproj" />
     <Project Path="tests/AuditCore.Application.Tests/AuditCore.Application.Tests.csproj" />
     <Project Path="tests/AuditCore.Domain.Tests/AuditCore.Domain.Tests.csproj" />
   </Folder>

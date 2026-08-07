@@ -1,8 +1,9 @@
-namespace AuditCore.Api.Configuration;
+﻿namespace AuditCore.Api.Configuration;
 
 public static class ApplicationPipeline
 {
-    public static WebApplication UseAuditCorePipeline(this WebApplication app)
+    public static WebApplication UseAuditCorePipeline(
+        this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
 
@@ -11,13 +12,19 @@ public static class ApplicationPipeline
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-        else
+        else if (!app.Environment.IsEnvironment("Testing"))
         {
             app.UseHsts();
         }
 
-        app.UseHttpsRedirection();
+        if (!app.Environment.IsEnvironment("Testing"))
+        {
+            app.UseHttpsRedirection();
+        }
+
+        app.UseAuthentication();
         app.UseAuthorization();
+
         app.MapControllers();
 
         return app;
