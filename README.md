@@ -9,14 +9,15 @@
 <br/>
 <br/>
 
-![Estado](https://img.shields.io/badge/Estado-Fundación%20técnica%20%7C%20En%20desarrollo-F59E0B?style=for-the-badge)
+![Estado](https://img.shields.io/badge/Estado-Backend%20completado%20%7C%20Frontend%20en%20desarrollo-22C55E?style=for-the-badge)
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![SQL Server](https://img.shields.io/badge/SQL_Server-2025-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Architecture-Clean-14B8A6?style=for-the-badge)
+![CI](https://img.shields.io/badge/Backend_CI-Passing-22C55E?style=for-the-badge&logo=githubactions&logoColor=white)
 
-> Estado actual: **fundación técnica en desarrollo**. La solución backend, la separación por capas y la base modular del frontend están creadas. Persistencia, autenticación y módulos funcionales continúan pendientes.
+> Estado actual: **backend completado, validado y fusionado a `main`**. La API, seguridad, persistencia, motor de auditoría, reportes, multiempresa y pruebas automatizadas están operativos. El trabajo pendiente se concentra en la integración y finalización del frontend React.
 
 </div>
 
@@ -69,29 +70,38 @@ Desarrollar una plataforma profesional para planificar, ejecutar, documentar y d
 
 ---
 
-## 🚀 Funcionalidades previstas
+## 🚀 Funcionalidades implementadas en el backend
 
-- 📊 Dashboard ejecutivo
+- 📊 Dashboard ejecutivo conectado a datos reales
 - 🏢 Gestión de organizaciones, sucursales y departamentos
 - 👥 Usuarios, roles y permisos
-- 🔐 Autenticación JWT y sesiones seguras
-- 📋 Planificación y ejecución de auditorías
-- 🧭 Gestión de marcos de control
-- ✅ Checklists y evaluaciones
-- 📁 Evidencias documentales
+- 🔐 Autenticación JWT con refresh tokens rotativos
+- 🛡️ Autorización basada en permisos (RBAC)
+- 🏷️ Aislamiento multiempresa
+- 📋 Planificación y ciclo de vida de auditorías
+- 🧭 Marcos de control, controles y preguntas
+- ✅ Evaluaciones y respuestas de controles
+- 📁 Evidencias documentales y metadatos
 - ⚠️ Gestión de riesgos
-- 🔎 Registro de hallazgos
-- 🛠️ Planes de acción y seguimiento
+- 🔎 Registro y seguimiento de hallazgos
+- 🛠️ Planes de acción
 - 📈 Indicadores de cumplimiento
-- 📄 Reportes PDF y Excel
-- 🔔 Notificaciones y alertas
-- ☁️ Preparación para Azure y AWS
+- 📄 Exportación de reportes CSV, Excel y PDF
+- 🧾 Auditoría automática de creación y modificación
+- 🗑️ Soporte de soft delete
+- ⚙️ Control de concurrencia con `rowversion`
+- ❤️ Health checks
+- 🚦 Rate limiting en autenticación
+- 🌐 CORS configurable
+- 🧯 Manejo global de excepciones
+- 🧪 Pruebas unitarias e integración automatizadas
+- 🔁 CI de backend con GitHub Actions
 
 ---
 
-## 🧩 Marcos y estándares previstos
+## 🧩 Marcos y estándares
 
-AuditCore estará diseñado para soportar múltiples marcos y buenas prácticas, entre ellos:
+AuditCore está diseñado para soportar múltiples marcos y buenas prácticas, entre ellos:
 
 - COBIT
 - ISO/IEC 27001
@@ -100,7 +110,7 @@ AuditCore estará diseñado para soportar múltiples marcos y buenas prácticas,
 - ITIL
 - Marcos internos personalizados
 
-COBIT será el primer marco de referencia incorporado, por su relación directa con la exposición académica que inspiró el proyecto.
+COBIT constituye el marco inicial de referencia por su relación directa con la exposición académica que inspiró el proyecto.
 
 ---
 
@@ -120,13 +130,15 @@ COBIT será el primer marco de referencia incorporado, por su relación directa 
   <img src="https://img.shields.io/badge/xUnit-Pruebas-5E2B97?style=flat-square&logo=dotnet&logoColor=white" alt="xUnit" />
 </p>
 
+- .NET 10
 - ASP.NET Core Web API
 - C#
-- Entity Framework Core
+- Entity Framework Core 10
 - SQL Server
 - JWT Bearer Authentication
 - Swagger / OpenAPI
 - xUnit
+- GitHub Actions
 
 ### Frontend
 
@@ -144,7 +156,7 @@ COBIT será el primer marco de referencia incorporado, por su relación directa 
   <img src="https://img.shields.io/badge/Lucide-Iconos-F56565?style=flat-square" alt="Lucide React" />
 </p>
 
-- React
+- React 19
 - TypeScript
 - Vite
 - React Router
@@ -181,8 +193,8 @@ COBIT será el primer marco de referencia incorporado, por su relación directa 
 - Clean Architecture
 - Principios SOLID
 - Git y GitHub
-- Azure Ready
-- AWS Ready
+- CI con GitHub Actions
+- Preparado para despliegues cloud
 
 ---
 
@@ -194,30 +206,13 @@ AuditCore/
 │   ├── AuditCore.slnx
 │   ├── src/
 │   │   ├── AuditCore.Domain/
-│   │   │   ├── Common/
-│   │   │   ├── Entities/
-│   │   │   ├── Enums/
-│   │   │   ├── Events/
-│   │   │   ├── Exceptions/
-│   │   │   ├── Interfaces/
-│   │   │   └── ValueObjects/
 │   │   ├── AuditCore.Application/
-│   │   │   ├── Common/
-│   │   │   ├── Features/
-│   │   │   └── DependencyInjection.cs
 │   │   ├── AuditCore.Infrastructure/
-│   │   │   ├── Identity/
-│   │   │   ├── Persistence/
-│   │   │   ├── Services/
-│   │   │   └── DependencyInjection.cs
 │   │   └── AuditCore.Api/
-│   │       ├── Controllers/
-│   │       ├── Extensions/
-│   │       ├── Filters/
-│   │       └── Middlewares/
 │   └── tests/
 │       ├── AuditCore.Domain.Tests/
-│       └── AuditCore.Application.Tests/
+│       ├── AuditCore.Application.Tests/
+│       └── AuditCore.Api.IntegrationTests/
 │
 └── frontend/
     └── auditcore-web/
@@ -239,52 +234,71 @@ Regla de dependencias:
 Domain ← Application ← Infrastructure ← API
 ```
 
-- **Domain:** entidades, reglas de negocio, value objects y eventos de dominio.
-- **Application:** casos de uso, contratos, validaciones y DTOs.
-- **Infrastructure:** persistencia, EF Core, SQL Server y servicios externos.
-- **API:** endpoints, autenticación, middleware, Swagger y composición.
-- **Frontend:** interfaz React desacoplada, organizada por funcionalidades y desplegable de forma independiente.
+- **Domain:** entidades y reglas de negocio.
+- **Application:** contratos, DTOs, casos de uso y seguridad transversal.
+- **Infrastructure:** EF Core, SQL Server, autenticación, servicios y persistencia.
+- **API:** endpoints, middleware, CORS, Swagger, health checks y rate limiting.
+- **Frontend:** SPA React desacoplada del backend.
 
 ---
 
-## 🔐 Seguridad prevista
+## 🔐 Seguridad
 
 - Access tokens JWT de corta duración
-- Refresh tokens rotativos
-- Autorización basada en roles y permisos
-- Protección multiempresa
-- Validación centralizada
-- Rate limiting
-- Auditoría de acciones
-- Cifrado en tránsito y en reposo
-- Gestión segura de secretos
-- Validación de archivos y evidencias
-- Registro de sesiones y accesos
+- Refresh tokens rotativos y revocables
+- Hash SHA-256 de refresh tokens persistidos
+- Autorización basada en permisos
+- Separación multiempresa
+- Rate limiting en autenticación
+- Manejo centralizado de errores
+- Gestión segura de secretos mediante configuración/variables de entorno
+- Soft delete y trazabilidad de cambios
+- Control de concurrencia mediante `rowversion`
+
+---
+
+## 🧪 Calidad y validación
+
+El backend fue validado antes de fusionarse a `main` con:
+
+- ✅ Compilación `Release` sin errores ni warnings
+- ✅ **57/57 pruebas automatizadas**
+  - 37 pruebas de dominio
+  - 3 pruebas de aplicación
+  - 17 pruebas de integración de API
+- ✅ Validación de autenticación, refresh, logout y RBAC
+- ✅ Validación de endpoints protegidos
+- ✅ Health checks
+- ✅ Generación completa del script de migraciones EF Core
+- ✅ Modelo EF Core sin cambios pendientes respecto al snapshot
+- ✅ Pipeline de GitHub Actions en verde
 
 ---
 
 ## 📦 Estado actual
 
-El proyecto se encuentra en **fase de fundación técnica**. La arquitectura base está preparada, pero todavía no constituye una versión funcional del producto.
-
 | Área | Estado | Detalle |
 |---|---|---|
-| Solución backend | ✅ Completada | Solución y proyectos principales creados |
-| Clean Architecture | ✅ Configurada | Domain, Application, Infrastructure y API separados |
-| Inyección de dependencias | 🟡 Base creada | Puntos de extensión creados en Application e Infrastructure |
-| Compilación backend | ✅ Operativa | La solución compila correctamente |
-| Swagger / OpenAPI | ✅ Operativo | Documentación inicial de la API disponible |
-| Frontend React | ✅ Base funcional | Rutas, layout, login temporal, dashboard, Axios y TanStack Query configurados |
-| Estructura frontend | ✅ Modular | Organización por app, components, features, services y styles |
-| Variables de entorno | ✅ Preparadas | Archivo `.env.example` y configuración de `VITE_API_BASE_URL` |
-| Pruebas base | 🟡 Parcial | Estructura creada; cobertura funcional pendiente |
-| Autenticación y autorización | 🚧 Pendiente | JWT, refresh tokens, roles y permisos |
-| Persistencia | 🚧 Pendiente | EF Core, SQL Server, migraciones y seeders |
-| Organizaciones y multiempresa | 🚧 Pendiente | Empresas, sucursales y departamentos |
-| Motor de auditoría | 🚧 Pendiente | Marcos, controles, evaluaciones y evidencias |
-| Hallazgos y riesgos | 🚧 Pendiente | Hallazgos, riesgos, recomendaciones y seguimiento |
-| Reportes y dashboard real | 🚧 Pendiente | Indicadores conectados, PDF, Excel y panel ejecutivo |
-| Automatización y despliegue | 🚧 Pendiente | CI/CD y preparación para publicación |
+| Backend | ✅ Completado | API y lógica de negocio finalizadas para el alcance actual |
+| Clean Architecture | ✅ Completada | Separación Domain / Application / Infrastructure / API |
+| Persistencia | ✅ Completada | EF Core, SQL Server, migraciones y seeders |
+| Autenticación | ✅ Completada | JWT, refresh tokens y logout |
+| RBAC | ✅ Completado | Roles, permisos y políticas dinámicas |
+| Multiempresa | ✅ Completado | Restricción de acceso por organización |
+| Organizaciones | ✅ Completado | Organizaciones, sucursales y departamentos |
+| Usuarios | ✅ Completado | Usuarios, roles, bloqueo y activación |
+| Auditorías | ✅ Completado | Ciclo de vida completo |
+| Riesgos | ✅ Completado | Evaluación, tratamiento y cierre |
+| Hallazgos | ✅ Completado | Registro y flujo de estados |
+| Evidencias | ✅ Completado | Metadatos, hash y vinculación a auditorías/hallazgos |
+| Planes de acción | ✅ Completado | Seguimiento y progreso |
+| Motor de controles | ✅ Completado | Marcos, controles, preguntas, evaluaciones y respuestas |
+| Dashboard | ✅ Completado | Métricas operativas y de cumplimiento |
+| Reportes | ✅ Completado | CSV, Excel y PDF |
+| Seguridad transversal | ✅ Completada | CORS, rate limiting, soft delete, auditoría y excepciones |
+| Tests | ✅ Completados | Unitarios e integración |
+| Backend CI | ✅ Completado | Build, tests y validación EF Core |
+| Frontend | 🚧 En desarrollo | Integración final con la API pendiente |
 
 ---
 
@@ -295,51 +309,66 @@ El proyecto se encuentra en **fase de fundación técnica**. La arquitectura bas
 - [x] Arquitectura backend
 - [x] Proyecto frontend
 - [x] Estructura modular del frontend
-- [x] Configuración inicial de Swagger
-- [x] Configuración base de inyección de dependencias
-- [x] Cliente HTTP y TanStack Query
-- [x] Layout, login temporal y dashboard inicial
-- [ ] Pruebas base con cobertura funcional
-- [ ] Persistencia con EF Core y SQL Server
+- [x] Swagger / OpenAPI
+- [x] Inyección de dependencias
+- [x] Persistencia EF Core + SQL Server
+- [x] Pruebas base y CI
 
 ### Fase 2 — Identidad y acceso
 
-- [ ] Usuarios
-- [ ] Roles
-- [ ] Permisos
-- [ ] JWT
-- [ ] Refresh tokens
+- [x] Usuarios
+- [x] Roles
+- [x] Permisos
+- [x] JWT
+- [x] Refresh tokens
 
-### Fase 3 — Organizaciones
+### Fase 3 — Organizaciones y multiempresa
 
-- [ ] Empresas
-- [ ] Sucursales
-- [ ] Departamentos
-- [ ] Separación multiempresa
+- [x] Organizaciones
+- [x] Sucursales
+- [x] Departamentos
+- [x] Separación multiempresa
 
 ### Fase 4 — Motor de auditoría
 
-- [ ] Marcos
-- [ ] Dominios
-- [ ] Controles
-- [ ] Preguntas
-- [ ] Evaluaciones
+- [x] Marcos
+- [x] Controles
+- [x] Preguntas
+- [x] Evaluaciones
+- [x] Respuestas
 
 ### Fase 5 — Gestión de resultados
 
-- [ ] Evidencias
-- [ ] Hallazgos
-- [ ] Riesgos
-- [ ] Recomendaciones
-- [ ] Planes de acción
+- [x] Evidencias
+- [x] Hallazgos
+- [x] Riesgos
+- [x] Recomendaciones
+- [x] Planes de acción
 
-### Fase 6 — Reportes y publicación
+### Fase 6 — Reportes y calidad backend
 
-- [ ] Dashboard conectado a datos reales
-- [ ] PDF
-- [ ] Excel
-- [ ] CI/CD
-- [ ] Azure / AWS
+- [x] Dashboard conectado a datos reales
+- [x] PDF
+- [x] Excel
+- [x] CSV
+- [x] Health checks
+- [x] Rate limiting
+- [x] CI backend
+- [x] Validación de migraciones
+
+### Fase 7 — Frontend e integración final
+
+- [ ] Conectar autenticación real
+- [ ] Gestión de sesión y refresh token
+- [ ] Conectar dashboard
+- [ ] Integrar organizaciones y usuarios
+- [ ] Integrar auditorías, riesgos y hallazgos
+- [ ] Integrar evidencias y planes de acción
+- [ ] Integrar motor de controles
+- [ ] Integrar reportes
+- [ ] UX/UI final
+- [ ] Pruebas frontend y E2E
+- [ ] Preparación para publicación
 
 ---
 
@@ -354,65 +383,65 @@ dotnet build .\AuditCore.slnx
 dotnet run --project .\src\AuditCore.Api\AuditCore.Api.csproj
 ```
 
-Swagger estará disponible en una URL similar a:
+### Pruebas
 
-```text
-http://localhost:5047/swagger
+```powershell
+cd backend
+dotnet test .\AuditCore.slnx
+```
+
+### Migraciones
+
+```powershell
+cd backend
+dotnet ef database update `
+  --project .\src\AuditCore.Infrastructure\AuditCore.Infrastructure.csproj `
+  --startup-project .\src\AuditCore.Api\AuditCore.Api.csproj `
+  --context AuditCoreDbContext
 ```
 
 ### Frontend
 
-Crea el archivo local de configuración a partir del ejemplo:
-
 ```powershell
 cd frontend\auditcore-web
-Copy-Item .\.env.example .\.env.local -Force
 npm install
 npm run dev
 ```
 
-Variable utilizada por el frontend:
+---
 
-```env
-VITE_API_BASE_URL=http://localhost:5047/api
-```
+## ⚙️ Configuración
 
-La aplicación estará disponible en:
+La configuración sensible no debe almacenarse en el repositorio.
+
+Variables relevantes:
 
 ```text
-http://localhost:5173
+ConnectionStrings__DefaultConnection
+Jwt__Key
+Jwt__Issuer
+Jwt__Audience
+Jwt__AccessTokenMinutes
+Jwt__RefreshTokenDays
+Cors__AllowedOrigins__0
 ```
 
----
-
-## 📚 Origen académico y evolución
-
-AuditCore no fue un programa desarrollado originalmente en 2017. La asignatura **Auditoría Informática** fue impartida de forma teórica y el grupo realizó una exposición como proyecto final.
-
-Años después, Francis Jairo Matías Rosario retomó aquella experiencia y propuso convertirla en una plataforma real de auditoría de TI, aplicando tecnologías modernas, Clean Architecture y estándares de desarrollo profesional.
-
-Este repositorio conserva el valor histórico de la experiencia académica, pero representa una reconstrucción completamente nueva a nivel de software, arquitectura, diseño y visión de producto.
+Para desarrollo local se puede utilizar `appsettings.Development.json` junto con variables de entorno o secretos de usuario.
 
 ---
 
-## 👨‍💻 Autor de la reconstrucción
+## 📚 Documentación adicional
 
-**Francis Jairo Matías Rosario**  
-Tecnólogo en Desarrollo de Software — ITLA  
-Estudiante de Ingeniería de Software — UNAPEC
+La documentación específica del backend se encuentra en:
 
-[![GitHub](https://img.shields.io/badge/GitHub-Jairo0811-181717?style=for-the-badge&logo=github)](https://github.com/Jairo0811)
+```text
+backend/README.md
+```
+
+Incluye detalles de arquitectura, seguridad, endpoints, pruebas y configuración del backend.
 
 ---
 
 ## 📄 Licencia
 
-La licencia del proyecto será definida cuando el alcance funcional y la estrategia de publicación estén establecidos.
-
----
-
-<div align="center">
-
-**AuditCore — Audita. Evalúa. Protege.**
-
-</div>
+Consulta el archivo `LICENSE` del repositorio para conocer los términos de uso.
