@@ -25,7 +25,7 @@ public sealed class FrameworkService : IFrameworkService
     {
         EnsureGlobalConfigurationAccess();
         var code = NormalizeCode(request.Code);
-        var version = request.Version.Trim();
+        var version = NormalizeRequired(request.Version, nameof(request.Version));
         if (await _dbContext.ControlFrameworks.AnyAsync(x => x.Code == code && x.Version == version, cancellationToken))
             throw new InvalidOperationException("Ya existe esta versión del marco de control.");
         var entity = new ControlFramework(request.Name, code, version, request.Description);
@@ -40,7 +40,7 @@ public sealed class FrameworkService : IFrameworkService
         var entity = await _dbContext.ControlFrameworks.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (entity is null) return null;
         var code = NormalizeCode(request.Code);
-        var version = request.Version.Trim();
+        var version = NormalizeRequired(request.Version, nameof(request.Version));
         if (await _dbContext.ControlFrameworks.AnyAsync(x => x.Id != id && x.Code == code && x.Version == version, cancellationToken))
             throw new InvalidOperationException("Ya existe esta versión del marco de control.");
         entity.Update(request.Name, code, version, request.Description, request.IsActive);
@@ -84,10 +84,39 @@ public sealed class FrameworkService : IFrameworkService
         return new ControlDto(entity.Id, entity.FrameworkId, entity.Code, entity.Title, entity.Domain, entity.Description, entity.Weight, entity.IsActive);
     }
 
+    public async Task<IReadOnlyCollection<QuestionDto>> GetQuestionsAsync(Guid controlId, CancellationToken cancellationToken = default) =>
+        await _dbContext.ControlQuestions.AsNoTracking().Where(x => x.ControlId == controlId).OrderBy(x => x.Order)
+            .Select(x => new QuestionDto(x.Id, x.ControlId, x.Text, x.Weight, x.Order, x.IsRequired, x.IsActive))
+            .ToListAsync(cancellationToken);
+
+    public async Task<QuestionDto> CreateQuestionAsync(CreateQuestionRequest request, CancellationToken cancellationToken = default)
+    {
+        EnsureGlobalConfigurationAccess();
+        if (!await _dbContext.ControlDefinitions.AnyAsync(x => x.Id == request.ControlId, cancellationToken))
+            throw new InvalidOperationException("El control no existe.");
+        if (await _dbContext.ControlQuestions.AnyAsync(x => x.ControlId == request.ControlId && x.Order == request.Order, cancellationToken))
+            throw new InvalidOperationException("Ya existe una pregunta con este orden en el control.");
+        var entity = new ControlQuestion(request.ControlId, request.Text, request.Weight, request.Order, request.IsRequired);
+        _dbContext.ControlQuestions.Add(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return new QuestionDto(entity.Id, entity.ControlId, entity.Text, entity.Weight, entity.Order, entity.IsRequired, entity.IsActive);
+    }
+
+    public async Task<QuestionDto?> UpdateQuestionAsync(Guid id, UpdateQuestionRequest request, CancellationToken cancellationToken = default)
+    {
+        EnsureGlobalConfigurationAccess();
+        var entity = await _dbContext.ControlQuestions.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (entity is null) return null;
+        if (await _dbContext.ControlQuestions.AnyAsync(x => x.Id != id && x.ControlId == entity.ControlId && x.Order == request.Order, cancellationToken))
+            throw new InvalidOperationException("Ya existe una pregunta con este orden en el control.");
+        entity.Update(request.Text, request.Weight, request.Order, request.IsRequired, request.IsActive);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return new QuestionDto(entity.Id, entity.ControlId, entity.Text, entity.Weight, entity.Order, entity.IsRequired, entity.IsActive);
+    }
+
     public async Task<IReadOnlyCollection<EvaluationDto>> GetEvaluationsAsync(Guid auditId, CancellationToken cancellationToken = default)
     {
-        var organizationId = await GetAuditOrganizationAsync(auditId, cancellationToken);
-        _tenantGuard.EnsureOrganization(organizationId);
+        _tenantGuard.EnsureOrganization(await GetAuditOrganizationAsync(auditId, cancellationToken));
         return await _dbContext.ControlEvaluations.AsNoTracking().Where(x => x.AuditId == auditId).OrderBy(x => x.Control.Code)
             .Select(x => new EvaluationDto(x.Id, x.AuditId, x.ControlId, x.Control.Code, x.Score, x.Status, x.Notes, x.EvaluatedByUserId, x.EvaluatedAtUtc))
             .ToListAsync(cancellationToken);
@@ -115,10 +144,47 @@ public sealed class FrameworkService : IFrameworkService
         return new EvaluationDto(entity.Id, entity.AuditId, entity.ControlId, controlCode, entity.Score, entity.Status, entity.Notes, entity.EvaluatedByUserId, entity.EvaluatedAtUtc);
     }
 
-    private async Task<Guid> GetAuditOrganizationAsync(Guid auditId, CancellationToken cancellationToken) =>
-        await _dbContext.Audits.Where(x => x.Id == auditId).Select(x => x.OrganizationId).SingleOrDefaultAsync(cancellationToken) is var id && id != Guid.Empty
-            ? id
-            : throw new InvalidOperationException("La auditoría no existe.");
+    public async Task<IReadOnlyCollection<AnswerDto>> GetAnswersAsync(Guid evaluationId, CancellationToken cancellationToken = default)
+    {
+        var organizationId = await _dbContext.ControlEvaluations.Where(x => x.Id == evaluationId)
+            .Select(x => x.Audit.OrganizationId).SingleOrDefaultAsync(cancellationToken);
+        if (organizationId == Guid.Empty) throw new InvalidOperationException("La evaluación no existe.");
+        _tenantGuard.EnsureOrganization(organizationId);
+        return await _dbContext.ControlAnswers.AsNoTracking().Where(x => x.EvaluationId == evaluationId)
+            .OrderBy(x => x.Question.Order)
+            .Select(x => new AnswerDto(x.Id, x.EvaluationId, x.QuestionId, x.Score, x.Notes))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<AnswerDto> UpsertAnswerAsync(Guid evaluationId, Guid questionId, UpsertAnswerRequest request, CancellationToken cancellationToken = default)
+    {
+        var evaluation = await _dbContext.ControlEvaluations.AsNoTracking().SingleOrDefaultAsync(x => x.Id == evaluationId, cancellationToken)
+            ?? throw new InvalidOperationException("La evaluación no existe.");
+        _tenantGuard.EnsureOrganization(await GetAuditOrganizationAsync(evaluation.AuditId, cancellationToken));
+        var questionBelongs = await _dbContext.ControlQuestions.AnyAsync(x => x.Id == questionId && x.ControlId == evaluation.ControlId && x.IsActive, cancellationToken);
+        if (!questionBelongs) throw new InvalidOperationException("La pregunta no pertenece al control evaluado o está inactiva.");
+
+        var entity = await _dbContext.ControlAnswers.SingleOrDefaultAsync(x => x.EvaluationId == evaluationId && x.QuestionId == questionId, cancellationToken);
+        if (entity is null)
+        {
+            entity = new ControlAnswer(evaluationId, questionId, request.Score, request.Notes);
+            _dbContext.ControlAnswers.Add(entity);
+        }
+        else
+        {
+            entity.Update(request.Score, request.Notes);
+        }
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return new AnswerDto(entity.Id, entity.EvaluationId, entity.QuestionId, entity.Score, entity.Notes);
+    }
+
+    private async Task<Guid> GetAuditOrganizationAsync(Guid auditId, CancellationToken cancellationToken)
+    {
+        var organizationId = await _dbContext.Audits.Where(x => x.Id == auditId)
+            .Select(x => x.OrganizationId).SingleOrDefaultAsync(cancellationToken);
+        if (organizationId == Guid.Empty) throw new InvalidOperationException("La auditoría no existe.");
+        return organizationId;
+    }
 
     private void EnsureGlobalConfigurationAccess()
     {
@@ -126,9 +192,11 @@ public sealed class FrameworkService : IFrameworkService
             throw new UnauthorizedAccessException("Solo un superadministrador puede modificar marcos globales.");
     }
 
-    private static string NormalizeCode(string value)
+    private static string NormalizeCode(string value) => NormalizeRequired(value, nameof(value)).ToUpperInvariant();
+
+    private static string NormalizeRequired(string value, string name)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(value);
-        return value.Trim().ToUpperInvariant();
+        ArgumentException.ThrowIfNullOrWhiteSpace(value, name);
+        return value.Trim();
     }
 }
