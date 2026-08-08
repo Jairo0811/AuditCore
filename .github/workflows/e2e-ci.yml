@@ -25,19 +25,19 @@ jobs:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           ACCEPT_EULA: Y
-          MSSQL_SA_PASSWORD: ${{ secrets.E2E_DB_PASSWORD }}
+          MSSQL_SA_PASSWORD: Aa1!AuditCore${{ github.run_id }}
         ports:
           - 1433:1433
 
     env:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://127.0.0.1:5047
-      ConnectionStrings__DefaultConnection: Server=127.0.0.1,1433;Database=AuditCoreE2E;User Id=sa;Password=${{ secrets.E2E_DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=True
+      ConnectionStrings__DefaultConnection: Server=127.0.0.1,1433;Database=AuditCoreE2E;User Id=sa;Password=Aa1!AuditCore${{ github.run_id }};Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=True
       SeedData__AdminEmail: admin@auditcore.local
-      SeedData__AdminPassword: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      SeedData__AdminPassword: E2E!Admin${{ github.run_id }}Aa1
       Jwt__Issuer: AuditCore
       Jwt__Audience: AuditCore.Web
-      Jwt__Key: ${{ secrets.E2E_JWT_KEY }}
+      Jwt__Key: AuditCore-E2E-${{ github.run_id }}-Ephemeral-Key-For-CI-Only-32Chars
       Jwt__AccessTokenMinutes: 15
       Jwt__RefreshTokenDays: 7
       Cors__AllowedOrigins__0: http://127.0.0.1:4173
@@ -45,22 +45,11 @@ jobs:
       VITE_API_URL: http://127.0.0.1:5047/api
       E2E_BASE_URL: http://127.0.0.1:4173
       E2E_ADMIN_EMAIL: admin@auditcore.local
-      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_ADMIN_PASSWORD: E2E!Admin${{ github.run_id }}Aa1
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Validate required E2E secrets
-        shell: bash
-        run: |
-          test -n "$E2E_DB_PASSWORD" || (echo 'Missing E2E_DB_PASSWORD' && exit 1)
-          test -n "$E2E_ADMIN_PASSWORD" || (echo 'Missing E2E_ADMIN_PASSWORD' && exit 1)
-          test -n "$E2E_JWT_KEY" || (echo 'Missing E2E_JWT_KEY' && exit 1)
-        env:
-          E2E_DB_PASSWORD: ${{ secrets.E2E_DB_PASSWORD }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-          E2E_JWT_KEY: ${{ secrets.E2E_JWT_KEY }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -86,6 +75,7 @@ jobs:
             if timeout 1 bash -c '</dev/tcp/127.0.0.1/1433' 2>/dev/null; then exit 0; fi
             sleep 2
           done
+          echo 'SQL Server did not become available in time.'
           exit 1
 
       - name: Apply database migrations
