@@ -31,7 +31,7 @@ export function DepartmentsPage() {
   return (
     <ResourceManager
       title="Departamentos"
-      description="Administra unidades organizativas y su asociación opcional a sucursales."
+      description="Administra unidades organizativas y su asociación opcional a sucursales. El código se genera automáticamente."
       endpoint="/departments"
       queryKey="departments"
       columns={[
@@ -52,7 +52,6 @@ export function DepartmentsPage() {
           placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
         },
         { name: "name", label: "Nombre", required: true },
-        { name: "code", label: "Código", required: true },
         {
           name: "branchId",
           label: "Sucursal (opcional)",
@@ -65,7 +64,6 @@ export function DepartmentsPage() {
       ]}
       updateFields={[
         { name: "name", label: "Nombre", required: true },
-        { name: "code", label: "Código", required: true },
         {
           name: "branchId",
           label: "Sucursal (opcional)",
@@ -86,7 +84,6 @@ export function DepartmentsPage() {
       ]}
       mapUpdate={(values) => ({
         name: values.name,
-        code: values.code,
         branchId: values.branchId || null,
         isActive: values.isActive === "true",
       })}
