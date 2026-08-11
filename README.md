@@ -10,7 +10,7 @@
 <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220" alt="React 19" />
 <img src="https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6" />
 <img src="https://img.shields.io/badge/SQL_Server-2025-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white" alt="SQL Server 2025" />
-<img src="https://img.shields.io/badge/E2E-Playwright-2EAD33?style=for-the-badge&logo=playwright&logoColor=white" alt="Playwright E2E" />
+<img src="https://img.shields.io/badge/E2E-Playwright-2EAD33?style=for-the-badge&logo=playwright" alt="Playwright E2E" />
 <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready" />
 <img src="https://img.shields.io/badge/CI-Passing-22C55E?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI Passing" />
 
@@ -54,7 +54,7 @@ El proyecto nace como una reconstrucción moderna de una experiencia académica 
 
 ## ✅ Estado actual
 
-**AuditCore v1.0.0** está funcionalmente cerrado para su alcance actual.
+**AuditCore v1.0.0** está funcionalmente cerrado para su alcance actual y se encuentra en una etapa de validación funcional y refinamiento posterior al cierre.
 
 La plataforma incluye:
 
@@ -71,12 +71,28 @@ La plataforma incluye:
 - marcos, controles, preguntas, evaluaciones y respuestas;
 - Dashboard ejecutivo;
 - exportación de reportes CSV, Excel y PDF;
+- identidad visual propia integrada en frontend y reportes PDF;
+- navegación administrativa organizada por áreas funcionales;
+- CRUD administrativo con validaciones y manejo de relaciones;
+- generación automática de códigos de organización;
+- selectores de organización en los formularios administrativos para evitar el uso manual de GUID;
 - health checks, rate limiting y manejo global de errores;
 - CI automatizado para backend, frontend, seguridad, contenedores y E2E;
 - Dockerfiles y Docker Compose para ejecución full stack;
 - pruebas E2E con Playwright sobre SQL Server y API reales.
 
 El backend mantiene **57 pruebas automatizadas** y la matriz de cierre de `v1.0.0` fue validada completamente en GitHub Actions.
+
+### Refinamientos posteriores a v1.0.0
+
+Después del cierre funcional se inició una revisión manual del producto para mejorar su comportamiento como aplicación real y como proyecto de portafolio. Entre los ajustes ya incorporados se encuentran:
+
+- branding final de AuditCore en la aplicación y documentos PDF;
+- reorganización del sidebar para separar auditoría, cumplimiento y administración;
+- mejoras en operaciones CRUD y tratamiento de eliminaciones con dependencias;
+- sustitución de identificadores técnicos por selectores legibles de organizaciones;
+- generación automática del código de las organizaciones a partir de su nombre;
+- mejoras de consistencia visual y experiencia de usuario en formularios administrativos.
 
 ---
 
@@ -192,6 +208,8 @@ AuditCore implementa:
 
 ## ▶️ Ejecución local
 
+> Los comandos son relativos al repositorio y funcionan independientemente de la ubicación local donde se haya clonado AuditCore.
+
 ### Backend
 
 ```powershell
@@ -201,12 +219,26 @@ dotnet build .\AuditCore.slnx
 dotnet run --project .\src\AuditCore.Api\AuditCore.Api.csproj
 ```
 
+La API de desarrollo escucha por defecto en:
+
+```text
+http://localhost:5047
+```
+
 ### Frontend
+
+En otra terminal:
 
 ```powershell
 cd frontend\auditcore-web
 npm ci
 npm run dev
+```
+
+Vite expone normalmente la aplicación en:
+
+```text
+http://localhost:5173
 ```
 
 ---
@@ -295,9 +327,39 @@ Reporte CSV
 
 ---
 
+## 🗺️ Roadmap de refinamiento
+
+El siguiente ciclo no plantea una reconstrucción de AuditCore. Su objetivo es consolidar la experiencia de uso y aumentar la cobertura funcional de la versión estable.
+
+### Prioridad alta
+
+- extender la generación automática de códigos a sucursales y departamentos;
+- permitir asociar usuarios con su sucursal y departamento dentro de la organización;
+- validar manualmente la matriz RBAC con los distintos perfiles del sistema;
+- completar un escenario funcional integral con datos de demostración;
+- revisar operaciones CRUD con relaciones dependientes y mensajes de error específicos.
+
+### Calidad y UX
+
+- homogeneizar validaciones, estados vacíos, loaders y mensajes de confirmación;
+- revisar selectores dependientes Organización → Sucursal → Departamento;
+- eliminar cualquier exposición innecesaria de identificadores GUID en la interfaz;
+- revisar la configuración HTTPS del entorno de desarrollo para evitar advertencias de redirección;
+- ampliar las pruebas E2E para cubrir los refinamientos administrativos.
+
+### Portafolio y demostración
+
+- incorporar un dataset de demostración reproducible mediante seeding;
+- preparar un escenario completo de auditoría que permita recorrer los módulos principales;
+- mantener documentación y capturas actualizadas a medida que avance el refinamiento.
+
+---
+
 ## 📦 Versionado
 
 La primera versión estable corresponde a **v1.0.0**.
+
+Los cambios posteriores al cierre se están tratando como una etapa de refinamiento compatible con una futura **v1.1.0**, preservando la arquitectura y funcionalidades existentes.
 
 Consulta [`CHANGELOG.md`](./CHANGELOG.md) para ver el detalle funcional y técnico de cada versión.
 
