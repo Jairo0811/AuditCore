@@ -1,0 +1,41 @@
+name: Container CI
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'compose.yml'
+      - '.env.example'
+      - '.github/workflows/container-ci.yml'
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-containers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        env:
+          MSSQL_SA_PASSWORD: ci-placeholder
+          AUDITCORE_JWT_KEY: ci-placeholder-value-with-more-than-thirty-two-characters
+          AUDITCORE_ADMIN_PASSWORD: ci-placeholder
+        run: docker compose -f compose.yml config --quiet
+
+      - name: Build API image
+        run: docker build --tag auditcore-api:ci ./backend
+
+      - name: Build frontend image
+        run: >-
+          docker build
+          --build-arg VITE_API_URL=http://127.0.0.1:5047/api
+          --tag auditcore-web:ci
+          ./frontend/auditcore-web
