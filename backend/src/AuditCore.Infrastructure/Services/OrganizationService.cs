@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text;
 using AuditCore.Application.Common.Interfaces;
 using AuditCore.Application.Features.Organizations;
 using AuditCore.Application.Features.Organizations.Models;
@@ -10,11 +8,6 @@ namespace AuditCore.Infrastructure.Services;
 
 public sealed class OrganizationService : IOrganizationService
 {
-    private static readonly HashSet<string> IgnoredCodeWords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "DE", "DEL", "LA", "LAS", "EL", "LOS", "Y", "E", "OF", "THE", "AND"
-    };
-
     private readonly IAuditCoreDbContext _dbContext;
     private readonly TenantGuard _tenantGuard;
 
@@ -86,9 +79,7 @@ public sealed class OrganizationService : IOrganizationService
 
     private async Task<string> GenerateUniqueCodeAsync(string name, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-
-        var baseCode = BuildCodeFromName(name);
+        var baseCode = EntityCodeGenerator.BuildPrefix(name, "ORG", 12);
         var candidate = baseCode;
         var suffix = 2;
 
@@ -100,45 +91,6 @@ public sealed class OrganizationService : IOrganizationService
 
         return candidate;
     }
-
-    private static string BuildCodeFromName(string name)
-    {
-        var normalized = RemoveDiacritics(name).ToUpperInvariant();
-        var words = normalized
-            .Split([' ', '-', '_', '.', ',', '/', '\\', '(', ')'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(KeepLettersAndDigits)
-            .Where(word => !string.IsNullOrWhiteSpace(word))
-            .ToArray();
-
-        var meaningfulWords = words
-            .Where(word => !IgnoredCodeWords.Contains(word))
-            .ToArray();
-
-        if (meaningfulWords.Length >= 2)
-        {
-            return string.Concat(meaningfulWords.Select(word => word[0]))[..Math.Min(10, meaningfulWords.Length)];
-        }
-
-        var source = meaningfulWords.FirstOrDefault() ?? words.FirstOrDefault() ?? "ORG";
-        return source[..Math.Min(12, source.Length)];
-    }
-
-    private static string RemoveDiacritics(string value)
-    {
-        var decomposed = value.Normalize(NormalizationForm.FormD);
-        var builder = new StringBuilder(decomposed.Length);
-
-        foreach (var character in decomposed)
-        {
-            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
-                builder.Append(character);
-        }
-
-        return builder.ToString().Normalize(NormalizationForm.FormC);
-    }
-
-    private static string KeepLettersAndDigits(string value) =>
-        new(value.Where(char.IsLetterOrDigit).ToArray());
 
     private static OrganizationDto Map(Organization organization) =>
         new(organization.Id, organization.Name, organization.Code, organization.Description, organization.IsActive);
