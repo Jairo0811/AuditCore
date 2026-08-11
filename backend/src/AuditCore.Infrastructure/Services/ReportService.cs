@@ -4,6 +4,7 @@ using System.Xml.Linq;
 using AuditCore.Application.Common.Interfaces;
 using AuditCore.Application.Features.Reports;
 using AuditCore.Domain.Entities;
+using AuditCore.Infrastructure.Services.Reports;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuditCore.Infrastructure.Services;
@@ -55,9 +56,9 @@ public sealed class ReportService : IReportService
             x.Code,
             x.Title,
             x.Organization,
-            x.Status.ToString(),
-            x.StartDateUtc?.ToString("yyyy-MM-dd") ?? string.Empty,
-            x.EndDateUtc?.ToString("yyyy-MM-dd") ?? string.Empty
+            FormatAuditStatus(x.Status),
+            x.StartDateUtc?.ToString("dd/MM/yyyy") ?? string.Empty,
+            x.EndDateUtc?.ToString("dd/MM/yyyy") ?? string.Empty
         }).ToArray();
         var headers = new[] { "Code", "Title", "Organization", "Status", "StartDate", "EndDate" };
 
@@ -65,7 +66,7 @@ public sealed class ReportService : IReportService
         {
             ReportFormat.Csv => new ReportFile("auditcore-audits.csv", "text/csv", BuildCsv(headers, rows)),
             ReportFormat.Excel => new ReportFile("auditcore-audits.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", BuildXlsx(headers, rows)),
-            ReportFormat.Pdf => new ReportFile("auditcore-audits.pdf", "application/pdf", BuildPdf(headers, rows)),
+            ReportFormat.Pdf => new ReportFile("auditcore-auditorias.pdf", "application/pdf", AuditSummaryPdfBuilder.Build(rows)),
             _ => throw new ArgumentOutOfRangeException(nameof(format))
         };
     }
@@ -116,37 +117,15 @@ public sealed class ReportService : IReportService
         return output.ToArray();
     }
 
-    private static byte[] BuildPdf(string[] headers, IReadOnlyCollection<string[]> rows)
+    private static string FormatAuditStatus(AuditStatus status) => status switch
     {
-        var lines = new List<string> { "AuditCore - Audit Summary", string.Join(" | ", headers) };
-        lines.AddRange(rows.Take(35).Select(row => string.Join(" | ", row)));
-        var content = new StringBuilder("BT /F1 8 Tf 35 800 Td 11 TL ");
-        foreach (var line in lines) content.Append($"({PdfText(line)}) Tj T* ");
-        content.Append("ET");
-        var stream = content.ToString();
-        var objects = new[]
-        {
-            "<< /Type /Catalog /Pages 2 0 R >>",
-            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-            $"<< /Length {Encoding.ASCII.GetByteCount(stream)} >>\nstream\n{stream}\nendstream",
-            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
-        };
-        using var ms = new MemoryStream();
-        void WriteAscii(string value) { var bytes = Encoding.ASCII.GetBytes(value); ms.Write(bytes); }
-        WriteAscii("%PDF-1.4\n");
-        var offsets = new List<long> { 0 };
-        for (var i = 0; i < objects.Length; i++)
-        {
-            offsets.Add(ms.Position);
-            WriteAscii($"{i + 1} 0 obj\n{objects[i]}\nendobj\n");
-        }
-        var xref = ms.Position;
-        WriteAscii($"xref\n0 {objects.Length + 1}\n0000000000 65535 f \n");
-        for (var i = 1; i < offsets.Count; i++) WriteAscii($"{offsets[i]:0000000000} 00000 n \n");
-        WriteAscii($"trailer << /Size {objects.Length + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF");
-        return ms.ToArray();
-    }
+        AuditStatus.Draft => "Borrador",
+        AuditStatus.Planned => "Planificada",
+        AuditStatus.InProgress => "En curso",
+        AuditStatus.Completed => "Completada",
+        AuditStatus.Closed => "Cerrada",
+        _ => status.ToString()
+    };
 
     private static void Write(ZipArchive zip, string path, string text)
     {
@@ -156,10 +135,4 @@ public sealed class ReportService : IReportService
     }
 
     private static string Xml(string value) => new XText(value).ToString();
-
-    private static string PdfText(string value) =>
-        new string(value.Select(ch => ch is >= ' ' and <= '~' ? ch : '?').ToArray())
-            .Replace("\\", "\\\\")
-            .Replace("(", "\\(")
-            .Replace(")", "\\)");
 }
