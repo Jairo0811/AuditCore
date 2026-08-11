@@ -1,6 +1,6 @@
 import { expect, request as playwrightRequest, test } from '@playwright/test';
 
-const apiBaseUrl = process.env.E2E_API_URL ?? 'http://127.0.0.1:5047/api';
+const apiBaseUrl = process.env.E2E_API_URL ?? 'http://127.0.0.1:5047/api/';
 const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'admin@auditcore.local';
 const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'AuditCore-E2E-2026!';
 
@@ -15,7 +15,7 @@ type EntityRef = {
 async function createAuthenticatedApi() {
   const anonymous = await playwrightRequest.newContext({ baseURL: apiBaseUrl });
 
-  const loginResponse = await anonymous.post('/auth/login', {
+  const loginResponse = await anonymous.post('auth/login', {
     data: {
       email: adminEmail,
       password: adminPassword,
@@ -40,19 +40,19 @@ test('executes the complete audit lifecycle against the real API and database', 
   const suffix = `${Date.now()}-${Math.floor(Math.random() * 10_000)}`;
 
   try {
-    const organizationsResponse = await api.get('/organizations');
+    const organizationsResponse = await api.get('organizations');
     expect(organizationsResponse.status()).toBe(200);
     const organizations = (await organizationsResponse.json()) as EntityRef[];
     expect(organizations.length).toBeGreaterThan(0);
     const organizationId = organizations[0].id;
 
-    const usersResponse = await api.get(`/users?organizationId=${organizationId}`);
+    const usersResponse = await api.get(`users?organizationId=${organizationId}`);
     expect(usersResponse.status()).toBe(200);
     const users = (await usersResponse.json()) as EntityRef[];
     expect(users.length).toBeGreaterThan(0);
     const adminUserId = users[0].id;
 
-    const auditResponse = await api.post('/audits', {
+    const auditResponse = await api.post('audits', {
       data: {
         organizationId,
         code: `AUD-E2E-${suffix}`,
@@ -64,7 +64,7 @@ test('executes the complete audit lifecycle against the real API and database', 
     expect(auditResponse.status()).toBe(201);
     const audit = (await auditResponse.json()) as EntityRef;
 
-    const riskResponse = await api.post('/risks', {
+    const riskResponse = await api.post('risks', {
       data: {
         auditId: audit.id,
         code: `RSK-E2E-${suffix}`,
@@ -79,7 +79,7 @@ test('executes the complete audit lifecycle against the real API and database', 
     expect(riskResponse.status()).toBe(201);
     const risk = (await riskResponse.json()) as EntityRef;
 
-    const findingResponse = await api.post('/findings', {
+    const findingResponse = await api.post('findings', {
       data: {
         auditId: audit.id,
         riskId: risk.id,
@@ -99,7 +99,7 @@ test('executes the complete audit lifecycle against the real API and database', 
     const finding = (await findingResponse.json()) as EntityRef;
 
     const evidenceText = `AuditCore E2E evidence ${suffix}`;
-    const evidenceResponse = await api.post('/evidence', {
+    const evidenceResponse = await api.post('evidence', {
       multipart: {
         auditId: audit.id,
         findingId: finding.id,
@@ -115,11 +115,11 @@ test('executes the complete audit lifecycle against the real API and database', 
     expect(evidenceResponse.status()).toBe(201);
     const evidence = (await evidenceResponse.json()) as EntityRef;
 
-    const downloadResponse = await api.get(`/evidence/${evidence.id}/download`);
+    const downloadResponse = await api.get(`evidence/${evidence.id}/download`);
     expect(downloadResponse.status()).toBe(200);
     expect(await downloadResponse.text()).toBe(evidenceText);
 
-    const actionPlanResponse = await api.post('/action-plans', {
+    const actionPlanResponse = await api.post('action-plans', {
       data: {
         findingId: finding.id,
         title: `Plan de acción E2E ${suffix}`,
@@ -132,30 +132,30 @@ test('executes the complete audit lifecycle against the real API and database', 
     const actionPlan = (await actionPlanResponse.json()) as EntityRef;
 
     expect(
-      (await api.put(`/action-plans/${actionPlan.id}/progress`, {
+      (await api.put(`action-plans/${actionPlan.id}/progress`, {
         data: { progressPercent: 50 },
       })).status(),
     ).toBe(204);
 
     expect(
-      (await api.put(`/action-plans/${actionPlan.id}/complete`, {
+      (await api.put(`action-plans/${actionPlan.id}/complete`, {
         data: { notes: 'Completado satisfactoriamente por la prueba E2E.' },
       })).status(),
     ).toBe(204);
 
-    expect((await api.put(`/risks/${risk.id}/start-treatment`)).status()).toBe(204);
-    expect((await api.put(`/risks/${risk.id}/mitigate`)).status()).toBe(204);
-    expect((await api.put(`/risks/${risk.id}/close`)).status()).toBe(204);
+    expect((await api.put(`risks/${risk.id}/start-treatment`)).status()).toBe(204);
+    expect((await api.put(`risks/${risk.id}/mitigate`)).status()).toBe(204);
+    expect((await api.put(`risks/${risk.id}/close`)).status()).toBe(204);
 
-    expect((await api.put(`/findings/${finding.id}/review`)).status()).toBe(204);
-    expect((await api.put(`/findings/${finding.id}/accept`)).status()).toBe(204);
-    expect((await api.put(`/findings/${finding.id}/resolve`)).status()).toBe(204);
-    expect((await api.put(`/findings/${finding.id}/close`)).status()).toBe(204);
+    expect((await api.put(`findings/${finding.id}/review`)).status()).toBe(204);
+    expect((await api.put(`findings/${finding.id}/accept`)).status()).toBe(204);
+    expect((await api.put(`findings/${finding.id}/resolve`)).status()).toBe(204);
+    expect((await api.put(`findings/${finding.id}/close`)).status()).toBe(204);
 
     const startDateUtc = new Date(Date.now() + 60 * 60 * 1000).toISOString();
     const endDateUtc = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const planAuditResponse = await api.put(`/audits/${audit.id}/plan`, {
+    const planAuditResponse = await api.put(`audits/${audit.id}/plan`, {
       data: {
         leadAuditorUserId: adminUserId,
         startDateUtc,
@@ -164,23 +164,23 @@ test('executes the complete audit lifecycle against the real API and database', 
     });
     expect(planAuditResponse.status()).toBe(200);
 
-    expect((await api.put(`/audits/${audit.id}/start`)).status()).toBe(204);
-    expect((await api.put(`/audits/${audit.id}/complete`)).status()).toBe(204);
-    expect((await api.put(`/audits/${audit.id}/close`)).status()).toBe(204);
+    expect((await api.put(`audits/${audit.id}/start`)).status()).toBe(204);
+    expect((await api.put(`audits/${audit.id}/complete`)).status()).toBe(204);
+    expect((await api.put(`audits/${audit.id}/close`)).status()).toBe(204);
 
-    const auditDetailsResponse = await api.get(`/audits/${audit.id}`);
+    const auditDetailsResponse = await api.get(`audits/${audit.id}`);
     expect(auditDetailsResponse.status()).toBe(200);
 
-    const dashboardResponse = await api.get(`/reports/dashboard?organizationId=${organizationId}`);
+    const dashboardResponse = await api.get(`reports/dashboard?organizationId=${organizationId}`);
     expect(dashboardResponse.status()).toBe(200);
 
     const exportResponse = await api.get(
-      `/reports/audits/export?organizationId=${organizationId}&format=Csv`,
+      `reports/audits/export?organizationId=${organizationId}&format=Csv`,
     );
     expect(exportResponse.status()).toBe(200);
     expect((await exportResponse.body()).byteLength).toBeGreaterThan(0);
 
-    expect((await api.delete(`/evidence/${evidence.id}`)).status()).toBe(204);
+    expect((await api.delete(`evidence/${evidence.id}`)).status()).toBe(204);
   } finally {
     await api.dispose();
   }
