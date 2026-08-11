@@ -42,7 +42,7 @@ export function FindingsPage() {
   return (
     <ResourceManager
       title="Hallazgos"
-      description="Documenta condiciones, criterios, causas, efectos, recomendaciones y seguimiento."
+      description="Documenta condiciones, criterios, causas, efectos, recomendaciones y seguimiento. El código se genera automáticamente."
       endpoint="/findings"
       queryKey="findings"
       columns={[
@@ -73,7 +73,6 @@ export function FindingsPage() {
             .map((risk) => ({ label: `${risk.code} — ${risk.title}`, value: risk.id })),
           placeholder: "Sin riesgo relacionado / selecciona un riesgo",
         },
-        { name: "code", label: "Código", required: true },
         { name: "title", label: "Título", required: true },
         { name: "condition", label: "Condición", type: "textarea", required: true },
         { name: "criteria", label: "Criterio", type: "textarea", required: true },
@@ -109,7 +108,6 @@ export function FindingsPage() {
           options: risks.options,
           placeholder: "Sin riesgo relacionado / selecciona un riesgo",
         },
-        { name: "code", label: "Código", required: true },
         { name: "title", label: "Título", required: true },
         { name: "condition", label: "Condición", type: "textarea", required: true },
         { name: "criteria", label: "Criterio", type: "textarea", required: true },

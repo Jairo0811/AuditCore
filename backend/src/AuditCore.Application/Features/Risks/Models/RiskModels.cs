@@ -21,7 +21,6 @@ public sealed record RiskDto(
 
 public sealed record CreateRiskRequest(
     Guid AuditId,
-    string Code,
     string Title,
     string? Description,
     int Probability,
@@ -30,7 +29,6 @@ public sealed record CreateRiskRequest(
     Guid? OwnerUserId);
 
 public sealed record UpdateRiskRequest(
-    string Code,
     string Title,
     string? Description,
     int Probability,

@@ -55,9 +55,7 @@ public sealed class RiskService : IRiskService
             ?? throw new InvalidOperationException("La auditoría indicada no existe.");
         _tenantGuard.EnsureOrganization(audit.OrganizationId);
         await ValidateOwnerAsync(request.OwnerUserId, audit.OrganizationId, cancellationToken);
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Risks.AnyAsync(x => x.AuditId == request.AuditId && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe un riesgo con el código '{code}' en esta auditoría.");
+        var code = await new SequentialCodeGenerator(_dbContext).NextRiskCodeAsync(request.AuditId, cancellationToken);
         var risk = new Risk(request.AuditId, code, request.Title, request.Description, request.Probability, request.Impact, request.Treatment, request.OwnerUserId);
         _dbContext.Risks.Add(risk);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -71,10 +69,7 @@ public sealed class RiskService : IRiskService
         var organizationId = await _dbContext.Audits.Where(x => x.Id == risk.AuditId).Select(x => x.OrganizationId).SingleAsync(cancellationToken);
         _tenantGuard.EnsureOrganization(organizationId);
         await ValidateOwnerAsync(request.OwnerUserId, organizationId, cancellationToken);
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Risks.AnyAsync(x => x.Id != id && x.AuditId == risk.AuditId && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe otro riesgo con el código '{code}' en esta auditoría.");
-        risk.Update(code, request.Title, request.Description, request.Probability, request.Impact, request.Treatment, request.OwnerUserId);
+        risk.Update(risk.Code, request.Title, request.Description, request.Probability, request.Impact, request.Treatment, request.OwnerUserId);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return await GetByIdAsync(id, cancellationToken);
     }
@@ -111,10 +106,4 @@ public sealed class RiskService : IRiskService
         <= 16 => RiskLevel.High,
         _ => RiskLevel.Critical
     };
-
-    private static string NormalizeCode(string code)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(code);
-        return code.Trim().ToUpperInvariant();
-    }
 }

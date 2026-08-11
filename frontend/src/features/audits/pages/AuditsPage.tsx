@@ -29,7 +29,7 @@ export function AuditsPage() {
   return (
     <ResourceManager
       title="Auditorías"
-      description="Planifica, ejecuta y da seguimiento al ciclo completo de auditoría."
+      description="Planifica, ejecuta y da seguimiento al ciclo completo de auditoría. El código se genera automáticamente."
       endpoint="/audits"
       queryKey="audits"
       columns={[
@@ -50,13 +50,11 @@ export function AuditsPage() {
           options: organizations.options,
           placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
         },
-        { name: "code", label: "Código", required: true },
         { name: "title", label: "Título", required: true },
         { name: "objective", label: "Objetivo", type: "textarea" },
         { name: "scope", label: "Alcance", type: "textarea" },
       ]}
       updateFields={[
-        { name: "code", label: "Código", required: true },
         { name: "title", label: "Título", required: true },
         { name: "objective", label: "Objetivo", type: "textarea" },
         { name: "scope", label: "Alcance", type: "textarea" },

@@ -19,13 +19,11 @@ public sealed record AuditDto(
 
 public sealed record CreateAuditRequest(
     Guid OrganizationId,
-    string Code,
     string Title,
     string? Objective,
     string? Scope);
 
 public sealed record UpdateAuditRequest(
-    string Code,
     string Title,
     string? Objective,
     string? Scope);

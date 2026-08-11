@@ -17,7 +17,7 @@ export function BranchesPage() {
   return (
     <ResourceManager
       title="Sucursales"
-      description="Administra las sedes y ubicaciones operativas de cada organización."
+      description="Administra las sedes y ubicaciones operativas de cada organización. El código se genera automáticamente."
       endpoint="/branches"
       queryKey="branches"
       columns={[
@@ -37,12 +37,10 @@ export function BranchesPage() {
           placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
         },
         { name: "name", label: "Nombre", required: true },
-        { name: "code", label: "Código", required: true },
         { name: "address", label: "Dirección", type: "textarea" },
       ]}
       updateFields={[
         { name: "name", label: "Nombre", required: true },
-        { name: "code", label: "Código", required: true },
         { name: "address", label: "Dirección", type: "textarea" },
         {
           name: "isActive",
@@ -57,7 +55,6 @@ export function BranchesPage() {
       ]}
       mapUpdate={(values) => ({
         name: values.name,
-        code: values.code,
         address: values.address || null,
         isActive: values.isActive === "true",
       })}
