@@ -163,10 +163,11 @@ AuditCore/
 │   ├── tests/
 │   └── Dockerfile
 ├── frontend/
-│   └── auditcore-web/
-│       ├── src/
-│       ├── Dockerfile
-│       └── nginx.conf
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   ├── Dockerfile
+│   └── nginx.conf
 ├── e2e/
 │   └── tests/
 ├── .github/workflows/
@@ -230,7 +231,7 @@ http://localhost:5047
 En otra terminal:
 
 ```powershell
-cd frontend\auditcore-web
+cd frontend
 npm ci
 npm run dev
 ```
@@ -283,7 +284,7 @@ Estado validado: **57/57 pruebas pasando**.
 ### Frontend
 
 ```powershell
-cd frontend\auditcore-web
+cd frontend
 npm ci
 npm run lint
 npm run build
