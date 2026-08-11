@@ -1,6 +1,33 @@
 import { ResourceManager } from "../../../components/ResourceManager";
+import { useLookupOptions } from "../../../hooks/useLookupOptions";
+
+interface OrganizationLookup {
+  id: string;
+  code: string;
+  name: string;
+}
+
+interface BranchLookup {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  code: string;
+  name: string;
+}
 
 export function DepartmentsPage() {
+  const organizations = useLookupOptions<OrganizationLookup>(
+    "organizations",
+    "/organizations",
+    (item) => `${item.code} — ${item.name}`,
+  );
+
+  const branches = useLookupOptions<BranchLookup>(
+    "branches",
+    "/branches",
+    (item) => `${item.organizationName} — ${item.code} — ${item.name}`,
+  );
+
   return (
     <ResourceManager
       title="Departamentos"
@@ -15,18 +42,54 @@ export function DepartmentsPage() {
         { key: "isActive", label: "Activo" },
       ]}
       createFields={[
-        { name: "organizationId", label: "ID de organización", required: true },
+        {
+          name: "organizationId",
+          label: "Organización",
+          type: "select",
+          required: true,
+          options: organizations.options,
+          clearFieldsOnChange: ["branchId"],
+          placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
+        },
         { name: "name", label: "Nombre", required: true },
         { name: "code", label: "Código", required: true },
-        { name: "branchId", label: "ID de sucursal" },
+        {
+          name: "branchId",
+          label: "Sucursal (opcional)",
+          type: "select",
+          options: (values) => branches.records
+            .filter((branch) => !values.organizationId || branch.organizationId === values.organizationId)
+            .map((branch) => ({ label: `${branch.code} — ${branch.name}`, value: branch.id })),
+          placeholder: "Sin sucursal / selecciona una sucursal",
+        },
       ]}
       updateFields={[
         { name: "name", label: "Nombre", required: true },
         { name: "code", label: "Código", required: true },
-        { name: "branchId", label: "ID de sucursal" },
-        { name: "isActive", label: "Activo (true/false)", required: true },
+        {
+          name: "branchId",
+          label: "Sucursal (opcional)",
+          type: "select",
+          options: branches.options,
+          placeholder: "Sin sucursal / selecciona una sucursal",
+        },
+        {
+          name: "isActive",
+          label: "Estado",
+          type: "select",
+          required: true,
+          options: [
+            { label: "Activo", value: "true" },
+            { label: "Inactivo", value: "false" },
+          ],
+        },
       ]}
-      mapUpdate={(values) => ({ ...values, branchId: values.branchId || null, isActive: values.isActive === "true" || values.isActive === "1" })}
+      mapUpdate={(values) => ({
+        name: values.name,
+        code: values.code,
+        branchId: values.branchId || null,
+        isActive: values.isActive === "true",
+      })}
       allowDelete
     />
   );

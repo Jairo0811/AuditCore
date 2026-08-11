@@ -1,6 +1,31 @@
 import { ResourceManager } from "../../../components/ResourceManager";
+import { useLookupOptions } from "../../../hooks/useLookupOptions";
+
+interface AuditLookup {
+  id: string;
+  code: string;
+  title: string;
+}
+
+interface UserLookup {
+  id: string;
+  fullName: string;
+  email: string;
+}
 
 export function RisksPage() {
+  const audits = useLookupOptions<AuditLookup>(
+    "audits",
+    "/audits",
+    (item) => `${item.code} — ${item.title}`,
+  );
+
+  const users = useLookupOptions<UserLookup>(
+    "users",
+    "/users",
+    (item) => `${item.fullName} — ${item.email}`,
+  );
+
   return (
     <ResourceManager
       title="Riesgos"
@@ -17,23 +42,42 @@ export function RisksPage() {
         { key: "status", label: "Estado" },
       ]}
       createFields={[
-        { name: "auditId", label: "ID de auditoría", required: true },
+        {
+          name: "auditId",
+          label: "Auditoría",
+          type: "select",
+          required: true,
+          options: audits.options,
+          placeholder: audits.isLoading ? "Cargando auditorías..." : "Selecciona una auditoría",
+        },
         { name: "code", label: "Código", required: true },
         { name: "title", label: "Título", required: true },
         { name: "description", label: "Descripción", type: "textarea" },
-        { name: "probability", label: "Probabilidad (1-5)", type: "number", required: true, defaultValue: 1 },
-        { name: "impact", label: "Impacto (1-5)", type: "number", required: true, defaultValue: 1 },
+        { name: "probability", label: "Probabilidad (1-5)", type: "number", min: 1, max: 5, required: true, defaultValue: 1 },
+        { name: "impact", label: "Impacto (1-5)", type: "number", min: 1, max: 5, required: true, defaultValue: 1 },
         { name: "treatment", label: "Tratamiento", type: "textarea" },
-        { name: "ownerUserId", label: "ID de responsable" },
+        {
+          name: "ownerUserId",
+          label: "Responsable (opcional)",
+          type: "select",
+          options: users.options,
+          placeholder: "Sin responsable / selecciona un usuario",
+        },
       ]}
       updateFields={[
         { name: "code", label: "Código", required: true },
         { name: "title", label: "Título", required: true },
         { name: "description", label: "Descripción", type: "textarea" },
-        { name: "probability", label: "Probabilidad (1-5)", type: "number", required: true },
-        { name: "impact", label: "Impacto (1-5)", type: "number", required: true },
+        { name: "probability", label: "Probabilidad (1-5)", type: "number", min: 1, max: 5, required: true },
+        { name: "impact", label: "Impacto (1-5)", type: "number", min: 1, max: 5, required: true },
         { name: "treatment", label: "Tratamiento", type: "textarea" },
-        { name: "ownerUserId", label: "ID de responsable" },
+        {
+          name: "ownerUserId",
+          label: "Responsable (opcional)",
+          type: "select",
+          options: users.options,
+          placeholder: "Sin responsable / selecciona un usuario",
+        },
       ]}
       rowActions={[
         { label: "Tratar", endpoint: (row) => `/risks/${row.id}/start-treatment` },

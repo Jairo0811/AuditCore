@@ -22,13 +22,22 @@ export function OrganizationsPage() {
         { name: "name", label: "Nombre", required: true },
         { name: "code", label: "Código", required: true },
         { name: "description", label: "Descripción", type: "textarea" },
-        { name: "isActive", label: "Activa (true/false)", required: true },
+        {
+          name: "isActive",
+          label: "Estado",
+          type: "select",
+          required: true,
+          options: [
+            { label: "Activa", value: "true" },
+            { label: "Inactiva", value: "false" },
+          ],
+        },
       ]}
       mapUpdate={(values) => ({
         name: values.name,
         code: values.code,
         description: values.description || null,
-        isActive: values.isActive === "true" || values.isActive === "1",
+        isActive: values.isActive === "true",
       })}
       allowDelete
     />

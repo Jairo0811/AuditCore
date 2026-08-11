@@ -1,6 +1,25 @@
 import { ResourceManager } from "../../../components/ResourceManager";
+import { useLookupOptions } from "../../../hooks/useLookupOptions";
+
+interface FrameworkLookup {
+  id: string;
+  code: string;
+  name: string;
+  version: string;
+}
 
 export function FrameworksPage() {
+  const frameworks = useLookupOptions<FrameworkLookup>(
+    "frameworks",
+    "/frameworks",
+    (item) => `${item.code} — ${item.name} (${item.version})`,
+  );
+
+  const statusOptions = [
+    { label: "Activo", value: "true" },
+    { label: "Inactivo", value: "false" },
+  ];
+
   return (
     <div>
       <ResourceManager
@@ -26,9 +45,9 @@ export function FrameworksPage() {
           { name: "code", label: "Código", required: true },
           { name: "version", label: "Versión", required: true },
           { name: "description", label: "Descripción", type: "textarea" },
-          { name: "isActive", label: "Activo (true/false)", required: true },
+          { name: "isActive", label: "Estado", type: "select", required: true, options: statusOptions },
         ]}
-        mapUpdate={(values) => ({ ...values, isActive: values.isActive === "true" || values.isActive === "1" })}
+        mapUpdate={(values) => ({ ...values, isActive: values.isActive === "true" })}
       />
 
       <ResourceManager
@@ -44,20 +63,27 @@ export function FrameworksPage() {
           { key: "isActive", label: "Activo" },
         ]}
         createFields={[
-          { name: "frameworkId", label: "ID de marco", required: true },
+          {
+            name: "frameworkId",
+            label: "Marco de control",
+            type: "select",
+            required: true,
+            options: frameworks.options,
+            placeholder: frameworks.isLoading ? "Cargando marcos..." : "Selecciona un marco",
+          },
           { name: "code", label: "Código", required: true },
           { name: "title", label: "Título", required: true },
           { name: "domain", label: "Dominio", required: true },
-          { name: "weight", label: "Peso", type: "number", required: true, defaultValue: 1 },
+          { name: "weight", label: "Peso", type: "number", min: 0, required: true, defaultValue: 1 },
           { name: "description", label: "Descripción", type: "textarea" },
         ]}
         updateFields={[
           { name: "code", label: "Código", required: true },
           { name: "title", label: "Título", required: true },
           { name: "domain", label: "Dominio", required: true },
-          { name: "weight", label: "Peso", type: "number", required: true },
+          { name: "weight", label: "Peso", type: "number", min: 0, required: true },
           { name: "description", label: "Descripción", type: "textarea" },
-          { name: "isActive", label: "Activo (true/false)", required: true },
+          { name: "isActive", label: "Estado", type: "select", required: true, options: statusOptions },
         ]}
         mapUpdate={(values) => ({
           code: values.code,
@@ -65,7 +91,7 @@ export function FrameworksPage() {
           domain: values.domain,
           weight: Number(values.weight),
           description: values.description || null,
-          isActive: values.isActive === "true" || values.isActive === "1",
+          isActive: values.isActive === "true",
         })}
       />
     </div>
