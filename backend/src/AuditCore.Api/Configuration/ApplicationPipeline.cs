@@ -1,4 +1,4 @@
-﻿namespace AuditCore.Api.Configuration;
+namespace AuditCore.Api.Configuration;
 
 public static class ApplicationPipeline
 {
@@ -7,17 +7,20 @@ public static class ApplicationPipeline
     {
         ArgumentNullException.ThrowIfNull(app);
 
+        var useHttpsRedirection =
+            app.Configuration.GetValue("Security:UseHttpsRedirection", true);
+
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-        else if (!app.Environment.IsEnvironment("Testing"))
+        else if (!app.Environment.IsEnvironment("Testing") && useHttpsRedirection)
         {
             app.UseHsts();
         }
 
-        if (!app.Environment.IsEnvironment("Testing"))
+        if (!app.Environment.IsEnvironment("Testing") && useHttpsRedirection)
         {
             app.UseHttpsRedirection();
         }
