@@ -4,7 +4,7 @@ export function OrganizationsPage() {
   return (
     <ResourceManager
       title="Organizaciones"
-      description="Administra las organizaciones disponibles en el entorno multiempresa."
+      description="Administra las organizaciones disponibles en el entorno multiempresa. El código se genera automáticamente al crear cada organización."
       endpoint="/organizations"
       queryKey="organizations"
       columns={[
@@ -15,12 +15,10 @@ export function OrganizationsPage() {
       ]}
       createFields={[
         { name: "name", label: "Nombre", required: true },
-        { name: "code", label: "Código", required: true },
         { name: "description", label: "Descripción", type: "textarea" },
       ]}
       updateFields={[
         { name: "name", label: "Nombre", required: true },
-        { name: "code", label: "Código", required: true },
         { name: "description", label: "Descripción", type: "textarea" },
         {
           name: "isActive",
@@ -35,7 +33,6 @@ export function OrganizationsPage() {
       ]}
       mapUpdate={(values) => ({
         name: values.name,
-        code: values.code,
         description: values.description || null,
         isActive: values.isActive === "true",
       })}
