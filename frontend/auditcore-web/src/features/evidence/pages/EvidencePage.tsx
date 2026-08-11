@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, FileUp, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useLookupOptions } from "../../../hooks/useLookupOptions";
 import { apiClient } from "../../../services/apiClient";
 
 interface EvidenceDto {
@@ -15,12 +16,37 @@ interface EvidenceDto {
   createdAtUtc: string;
 }
 
+interface AuditLookup {
+  id: string;
+  code: string;
+  title: string;
+}
+
+interface FindingLookup {
+  id: string;
+  auditId: string;
+  code: string;
+  title: string;
+}
+
 export function EvidencePage() {
   const queryClient = useQueryClient();
   const [auditId, setAuditId] = useState("");
   const [findingId, setFindingId] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
+
+  const audits = useLookupOptions<AuditLookup>(
+    "audits",
+    "/audits",
+    (item) => `${item.code} — ${item.title}`,
+  );
+
+  const findings = useLookupOptions<FindingLookup>(
+    "findings",
+    "/findings",
+    (item) => `${item.code} — ${item.title}`,
+  );
 
   const evidenceQuery = useQuery({
     queryKey: ["evidence"],
@@ -29,7 +55,7 @@ export function EvidencePage() {
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!file || !auditId) throw new Error("Completa auditoría y archivo.");
+      if (!file || !auditId) throw new Error("Selecciona una auditoría y un archivo.");
       const body = new FormData();
       body.append("auditId", auditId);
       if (findingId) body.append("findingId", findingId);
@@ -40,6 +66,7 @@ export function EvidencePage() {
     onSuccess: async () => {
       setFile(null);
       setDescription("");
+      setFindingId("");
       await queryClient.invalidateQueries({ queryKey: ["evidence"] });
     },
   });
@@ -59,6 +86,8 @@ export function EvidencePage() {
     URL.revokeObjectURL(url);
   }
 
+  const availableFindings = findings.records.filter((item) => !auditId || item.auditId === auditId);
+
   return (
     <main className="module-page">
       <header className="module-header">
@@ -72,10 +101,28 @@ export function EvidencePage() {
       <section className="data-panel upload-panel">
         <h2>Subir evidencia</h2>
         <div className="inline-form">
-          <label>ID de auditoría<input value={auditId} onChange={(e) => setAuditId(e.target.value)} /></label>
-          <label>ID de hallazgo (opcional)<input value={findingId} onChange={(e) => setFindingId(e.target.value)} /></label>
-          <label>Descripción<input value={description} onChange={(e) => setDescription(e.target.value)} /></label>
-          <label>Archivo<input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
+          <label>
+            Auditoría
+            <select
+              value={auditId}
+              onChange={(event) => {
+                setAuditId(event.target.value);
+                setFindingId("");
+              }}
+            >
+              <option value="">{audits.isLoading ? "Cargando auditorías..." : "Selecciona una auditoría"}</option>
+              {audits.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+          <label>
+            Hallazgo (opcional)
+            <select value={findingId} onChange={(event) => setFindingId(event.target.value)} disabled={!auditId}>
+              <option value="">Sin hallazgo relacionado</option>
+              {availableFindings.map((item) => <option key={item.id} value={item.id}>{item.code} — {item.title}</option>)}
+            </select>
+          </label>
+          <label>Descripción<input value={description} onChange={(event) => setDescription(event.target.value)} /></label>
+          <label>Archivo<input type="file" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label>
           <button type="button" disabled={!file || !auditId || uploadMutation.isPending} onClick={() => uploadMutation.mutate()}>
             <FileUp size={16} /> {uploadMutation.isPending ? "Subiendo..." : "Subir"}
           </button>
@@ -96,13 +143,14 @@ export function EvidencePage() {
                   <td>{new Date(item.createdAtUtc).toLocaleDateString()}</td>
                   <td><div className="row-actions">
                     <button className="icon-button" type="button" title="Descargar" onClick={() => downloadEvidence(item)}><Download size={15} /></button>
-                    <button className="icon-button danger-button" type="button" title="Eliminar" onClick={() => window.confirm("¿Eliminar esta evidencia?") && deleteMutation.mutate(item.id)}><Trash2 size={15} /></button>
+                    <button className="icon-button danger-button" type="button" title="Eliminar" disabled={deleteMutation.isPending} onClick={() => window.confirm("¿Eliminar esta evidencia?") && deleteMutation.mutate(item.id)}><Trash2 size={15} /></button>
                   </div></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {!evidenceQuery.isLoading && (evidenceQuery.data?.length ?? 0) === 0 && <div className="empty-table">No hay evidencias para mostrar.</div>}
       </section>
     </main>
   );
