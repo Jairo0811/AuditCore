@@ -1,4 +1,3 @@
-@"
 # .NET
 bin/
 obj/
@@ -11,15 +10,31 @@ TestResults/
 node_modules/
 dist/
 .vite/
+coverage/
 
-# Entorno y secretos
+# Playwright
+playwright-report/
+test-results/
+e2e/playwright-report/
+e2e/test-results/
+
+# Evidence runtime storage
+**/evidence-storage/
+evidence-storage/
+
+# Environment and secrets
 .env
 .env.*
 !.env.example
 
-# IDE y sistema
+# Local databases and logs
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# IDE and OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
-"@ | Set-Content .gitignore
