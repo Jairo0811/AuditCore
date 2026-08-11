@@ -1,6 +1,31 @@
 import { ResourceManager } from "../../../components/ResourceManager";
+import { useLookupOptions } from "../../../hooks/useLookupOptions";
+
+interface OrganizationLookup {
+  id: string;
+  code: string;
+  name: string;
+}
+
+interface RoleLookup {
+  id: string;
+  code: string;
+  name: string;
+}
 
 export function UsersPage() {
+  const organizations = useLookupOptions<OrganizationLookup>(
+    "organizations",
+    "/organizations",
+    (item) => `${item.code} — ${item.name}`,
+  );
+
+  const roles = useLookupOptions<RoleLookup>(
+    "roles",
+    "/roles",
+    (item) => `${item.code} — ${item.name}`,
+  );
+
   return (
     <ResourceManager
       title="Usuarios"
@@ -16,12 +41,25 @@ export function UsersPage() {
         { key: "isLocked", label: "Bloqueado" },
       ]}
       createFields={[
-        { name: "organizationId", label: "ID de organización", required: true },
+        {
+          name: "organizationId",
+          label: "Organización",
+          type: "select",
+          required: true,
+          options: organizations.options,
+          placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
+        },
         { name: "firstName", label: "Nombre", required: true },
         { name: "lastName", label: "Apellido", required: true },
         { name: "email", label: "Correo", required: true },
-        { name: "password", label: "Contraseña", required: true },
-        { name: "roleIds", label: "IDs de roles (separados por coma)" },
+        { name: "password", label: "Contraseña", type: "password", required: true },
+        {
+          name: "roleIds",
+          label: "Roles",
+          type: "multiselect",
+          options: roles.options,
+          placeholder: "Selecciona uno o varios roles",
+        },
       ]}
       updateFields={[
         { name: "firstName", label: "Nombre", required: true },
@@ -34,7 +72,7 @@ export function UsersPage() {
         lastName: values.lastName,
         email: values.email,
         password: values.password,
-        roleIds: values.roleIds ? values.roleIds.split(",").map((value) => value.trim()).filter(Boolean) : [],
+        roleIds: values.roleIds ? values.roleIds.split(",").filter(Boolean) : [],
       })}
       rowActions={[
         { label: "Activar", endpoint: (row) => `/users/${row.id}/activate` },
@@ -44,7 +82,11 @@ export function UsersPage() {
         {
           label: "Contraseña",
           endpoint: (row) => `/users/${row.id}/password`,
-          body: () => ({ password: window.prompt("Nueva contraseña:") ?? "" }),
+          fields: [
+            { name: "password", label: "Nueva contraseña", type: "password", required: true },
+          ],
+          submitLabel: "Cambiar contraseña",
+          body: (_row, values) => ({ password: values.password }),
         },
       ]}
     />
