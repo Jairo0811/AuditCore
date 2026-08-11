@@ -65,7 +65,7 @@ internal static class AuditSummaryPdfBuilder
         var generatedAt = DateTimeOffset.Now.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
         DrawText(content, $"Generado: {generatedAt}", 620, 548, 8.5, color: "0.663 0.741 0.816");
 
-        DrawRoundedMetric(content, 620, 493, 180, 39, totalRows);
+        DrawMetric(content, 620, 493, 180, 39, totalRows);
 
         if (totalRows == 0)
         {
@@ -77,13 +77,13 @@ internal static class AuditSummaryPdfBuilder
         }
 
         DrawLine(content, Margin, 31, PageWidth - Margin, 31, "0.122 0.224 0.329", 0.7);
-        DrawText(content, "AuditCore · Auditoría, evaluación y cumplimiento TI", Margin, 17, 7.5, color: "0.459 0.553 0.647");
+        DrawText(content, "AuditCore - Auditoría, evaluación y cumplimiento TI", Margin, 17, 7.5, color: "0.459 0.553 0.647");
         DrawText(content, $"Página {pageNumber} de {pageCount}", 728, 17, 7.5, color: "0.459 0.553 0.647");
 
         return content.ToString();
     }
 
-    private static void DrawRoundedMetric(StringBuilder content, double x, double y, double width, double height, int totalRows)
+    private static void DrawMetric(StringBuilder content, double x, double y, double width, double height, int totalRows)
     {
         DrawRectangle(content, x, y, width, height, "0.039 0.125 0.212");
         DrawLine(content, x, y, x + width, y, "0.078 0.722 0.651", 1.3);
@@ -145,11 +145,12 @@ internal static class AuditSummaryPdfBuilder
         var regularFontObjectId = 3 + (pageCount * 2);
         var boldFontObjectId = regularFontObjectId + 1;
         var pageObjectIds = Enumerable.Range(0, pageCount).Select(index => 3 + (index * 2)).ToArray();
+        var pageReferences = string.Join(" ", pageObjectIds.Select(id => $"{id} 0 R"));
 
         var objects = new List<string>
         {
             "<< /Type /Catalog /Pages 2 0 R >>",
-            $"<< /Type /Pages /Kids [{string.Join(' ', pageObjectIds.Select(id => $"{id} 0 R"))}] /Count {pageCount} >>"
+            $"<< /Type /Pages /Kids [{pageReferences}] /Count {pageCount} >>"
         };
 
         for (var index = 0; index < pageCount; index++)
@@ -170,11 +171,9 @@ internal static class AuditSummaryPdfBuilder
 
         using var output = new MemoryStream();
 
-        static byte[] Ascii(string value) => Encoding.ASCII.GetBytes(value);
-
         void WriteAscii(string value)
         {
-            var bytes = Ascii(value);
+            var bytes = Encoding.ASCII.GetBytes(value);
             output.Write(bytes, 0, bytes.Length);
         }
 
@@ -210,9 +209,9 @@ internal static class AuditSummaryPdfBuilder
     {
         content.Append(color).Append(" rg ");
         content.Append("BT /").Append(bold ? "F2" : "F1").Append(' ')
-            .Append(fontSize.ToString("0.##", CultureInfo.InvariantCulture)).Append(" Tf ")
-            .Append(x.ToString("0.##", CultureInfo.InvariantCulture)).Append(' ')
-            .Append(y.ToString("0.##", CultureInfo.InvariantCulture)).Append(" Td (")
+            .Append(Number(fontSize)).Append(" Tf ")
+            .Append(Number(x)).Append(' ')
+            .Append(Number(y)).Append(" Td (")
             .Append(EscapePdfText(value)).Append(") Tj ET\n");
     }
 
