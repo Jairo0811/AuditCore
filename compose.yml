@@ -1,0 +1,67 @@
+name: auditcore
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Define MSSQL_SA_PASSWORD in .env}
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" >/dev/null 2>&1 ||
+          /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" >/dev/null 2>&1
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=AuditCoreDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=True"
+      Jwt__Issuer: AuditCore
+      Jwt__Audience: AuditCore.Web
+      Jwt__Key: ${AUDITCORE_JWT_KEY:?Define AUDITCORE_JWT_KEY in .env}
+      Jwt__AccessTokenMinutes: 15
+      Jwt__RefreshTokenDays: 7
+      SeedData__AdminEmail: ${AUDITCORE_ADMIN_EMAIL:-admin@auditcore.local}
+      SeedData__AdminPassword: ${AUDITCORE_ADMIN_PASSWORD:?Define AUDITCORE_ADMIN_PASSWORD in .env}
+      Cors__AllowedOrigins__0: http://localhost:8080
+      EvidenceStorage__Path: /var/lib/auditcore/evidence
+      RateLimiting__AuthPermitLimit: 20
+      Security__UseHttpsRedirection: "false"
+    ports:
+      - "5047:8080"
+    volumes:
+      - evidence_data:/var/lib/auditcore/evidence
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend/auditcore-web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5047/api
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
+  evidence_data:
