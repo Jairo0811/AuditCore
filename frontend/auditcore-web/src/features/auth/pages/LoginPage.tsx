@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
-import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -9,7 +8,9 @@ import { isAuthenticated, login } from "../auth";
 
 const loginSchema = z.object({
   email: z.string().email("Ingresa un correo electrónico válido."),
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
+  password: z
+    .string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres."),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -40,7 +41,8 @@ export function LoginPage() {
 
     try {
       await login(values);
-      const from = (location.state as { from?: string } | null)?.from ?? "/dashboard";
+      const from =
+        (location.state as { from?: string } | null)?.from ?? "/dashboard";
       navigate(from, { replace: true });
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -48,30 +50,43 @@ export function LoginPage() {
         return;
       }
 
-      setServerError("No fue posible conectar con AuditCore. Verifica que la API esté disponible.");
+      setServerError(
+        "No fue posible conectar con AuditCore. Verifica que la API esté disponible.",
+      );
     }
   }
 
   return (
     <main className="login-page">
-      <section className="login-brand">
-        <div className="brand-symbol"><ShieldCheck size={46} strokeWidth={1.8} /></div>
-        <p className="eyebrow">IT AUDIT & COMPLIANCE PLATFORM</p>
-        <h1>AUDIT<span>CORE</span></h1>
-        <p className="brand-description">
-          Gestiona auditorías, riesgos, hallazgos, evidencias y cumplimiento desde una sola plataforma empresarial.
-        </p>
+      <section
+        className="login-brand"
+        aria-label="AuditCore Enterprise IT Audit & Compliance Platform"
+      >
+        <div className="login-brand-visual">
+          <img
+            src="/assets/brand/auditcore-logo.png"
+            alt="AuditCore — Enterprise IT Audit & Compliance Platform. Audita, evalúa, protege."
+          />
+        </div>
       </section>
 
       <section className="login-panel">
-        <form className="login-form" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <form
+          className="login-form"
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+        >
           <div>
             <p className="eyebrow">BIENVENIDO</p>
             <h2>Iniciar sesión</h2>
             <p>Accede al espacio de trabajo de tu organización.</p>
           </div>
 
-          {serverError && <div className="form-alert" role="alert">{serverError}</div>}
+          {serverError && (
+            <div className="form-alert" role="alert">
+              {serverError}
+            </div>
+          )}
 
           <label>
             Correo electrónico
@@ -82,7 +97,9 @@ export function LoginPage() {
               aria-invalid={Boolean(errors.email)}
               {...register("email")}
             />
-            {errors.email && <small className="field-error">{errors.email.message}</small>}
+            {errors.email && (
+              <small className="field-error">{errors.email.message}</small>
+            )}
           </label>
 
           <label>
@@ -94,7 +111,9 @@ export function LoginPage() {
               aria-invalid={Boolean(errors.password)}
               {...register("password")}
             />
-            {errors.password && <small className="field-error">{errors.password.message}</small>}
+            {errors.password && (
+              <small className="field-error">{errors.password.message}</small>
+            )}
           </label>
 
           <button type="submit" disabled={isSubmitting}>
