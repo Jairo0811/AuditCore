@@ -9,11 +9,9 @@ public sealed record OrganizationDto(
 
 public sealed record CreateOrganizationRequest(
     string Name,
-    string Code,
     string? Description);
 
 public sealed record UpdateOrganizationRequest(
     string Name,
-    string Code,
     string? Description,
     bool IsActive);
