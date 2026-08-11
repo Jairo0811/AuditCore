@@ -56,9 +56,9 @@ test.describe('Authenticated navigation', () => {
 
   for (const [label, path] of modules) {
     test(`opens ${label}`, async ({ page }) => {
-      await page.getByRole('link', { name: label }).click();
+      await page.getByRole('link', { name: label, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
-      await expect(page.locator('main')).toBeVisible();
+      await expect(page.getByRole('main').first()).toBeVisible();
     });
   }
 });
