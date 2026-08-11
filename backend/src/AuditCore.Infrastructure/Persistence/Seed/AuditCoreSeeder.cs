@@ -31,7 +31,8 @@ public sealed class AuditCoreSeeder
         await SeedPermissionsAsync(cancellationToken);
         await SeedSuperAdminPermissionsAsync(cancellationToken);
 
-        var organization = await SeedOrganizationAsync(cancellationToken);
+        var organization =
+            await SeedOrganizationAsync(cancellationToken);
 
         await SeedAdministratorAsync(
             organization,
@@ -97,17 +98,21 @@ public sealed class AuditCoreSeeder
 
         var permissions = await _dbContext.Permissions
             .Where(permission =>
-                DefaultPermissions.SuperAdmin.Contains(permission.Code))
+                DefaultPermissions.SuperAdmin.Contains(
+                    permission.Code))
             .ToListAsync(cancellationToken);
 
-        var existingPermissionIds = await _dbContext.RolePermissions
-            .Where(item => item.RoleId == superAdminRole.Id)
-            .Select(item => item.PermissionId)
-            .ToListAsync(cancellationToken);
+        var existingPermissionIds =
+            await _dbContext.RolePermissions
+                .Where(item =>
+                    item.RoleId == superAdminRole.Id)
+                .Select(item => item.PermissionId)
+                .ToListAsync(cancellationToken);
 
         foreach (var permission in permissions)
         {
-            if (existingPermissionIds.Contains(permission.Id))
+            if (existingPermissionIds.Contains(
+                    permission.Id))
             {
                 continue;
             }
@@ -128,7 +133,8 @@ public sealed class AuditCoreSeeder
             await _dbContext.Organizations
                 .SingleOrDefaultAsync(
                     organization =>
-                        organization.Code == DefaultOrganizationCode,
+                        organization.Code ==
+                        DefaultOrganizationCode,
                     cancellationToken);
 
         if (existingOrganization is not null)
@@ -143,7 +149,8 @@ public sealed class AuditCoreSeeder
 
         _dbContext.Organizations.Add(organization);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(
+            cancellationToken);
 
         return organization;
     }
@@ -153,20 +160,10 @@ public sealed class AuditCoreSeeder
         CancellationToken cancellationToken)
     {
         var email =
-            _configuration["SeedData:AdminEmail"]
-            ?? DefaultAdminEmail;
-
-        var existingUser = await _dbContext.Users
-            .SingleOrDefaultAsync(
-                user =>
-                    user.OrganizationId == organization.Id &&
-                    user.Email == email.ToLowerInvariant(),
-                cancellationToken);
-
-        if (existingUser is not null)
-        {
-            return;
-        }
+            (_configuration["SeedData:AdminEmail"]
+             ?? DefaultAdminEmail)
+            .Trim()
+            .ToLowerInvariant();
 
         var password =
             _configuration["SeedData:AdminPassword"];
@@ -175,7 +172,60 @@ public sealed class AuditCoreSeeder
         {
             throw new InvalidOperationException(
                 "SeedData:AdminPassword no está configurada. " +
-                "Defínela mediante una variable de entorno antes de iniciar AuditCore.");
+                "Defínela mediante configuración segura antes " +
+                "de iniciar AuditCore.");
+        }
+
+        var resetPassword =
+            _configuration.GetValue<bool>(
+                "SeedData:ResetAdminPasswordOnStartup");
+
+        var existingUser = await _dbContext.Users
+            .IgnoreQueryFilters()
+            .SingleOrDefaultAsync(
+                user =>
+                    user.OrganizationId == organization.Id &&
+                    user.Email == email,
+                cancellationToken);
+
+        if (existingUser is not null)
+        {
+            var changed = false;
+
+            if (resetPassword)
+            {
+                var passwordHash =
+                    _passwordHasher.HashPassword(
+                        existingUser,
+                        password);
+
+                existingUser.ChangePassword(passwordHash);
+                changed = true;
+            }
+
+            if (!existingUser.IsActive)
+            {
+                existingUser.Activate();
+                changed = true;
+            }
+
+            if (existingUser.IsLocked)
+            {
+                existingUser.Unlock();
+                changed = true;
+            }
+
+            if (changed)
+            {
+                await _dbContext.SaveChangesAsync(
+                    cancellationToken);
+            }
+
+            await EnsureSuperAdminRoleAsync(
+                existingUser,
+                cancellationToken);
+
+            return;
         }
 
         var user = new User(
@@ -185,25 +235,53 @@ public sealed class AuditCoreSeeder
             email,
             "TEMPORARY_HASH");
 
-        var passwordHash =
-            _passwordHasher.HashPassword(user, password);
+        var hash =
+            _passwordHasher.HashPassword(
+                user,
+                password);
 
-        user.ChangePassword(passwordHash);
+        user.ChangePassword(hash);
 
         _dbContext.Users.Add(user);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(
+            cancellationToken);
 
-        var superAdminRole = await _dbContext.Roles
-            .SingleAsync(
-                role => role.Code == DefaultRoles.SuperAdmin,
-                cancellationToken);
+        await EnsureSuperAdminRoleAsync(
+            user,
+            cancellationToken);
+    }
+
+    private async Task EnsureSuperAdminRoleAsync(
+        User user,
+        CancellationToken cancellationToken)
+    {
+        var superAdminRole =
+            await _dbContext.Roles
+                .SingleAsync(
+                    role =>
+                        role.Code == DefaultRoles.SuperAdmin,
+                    cancellationToken);
+
+        var hasRole =
+            await _dbContext.UserRoles
+                .AnyAsync(
+                    item =>
+                        item.UserId == user.Id &&
+                        item.RoleId == superAdminRole.Id,
+                    cancellationToken);
+
+        if (hasRole)
+        {
+            return;
+        }
 
         _dbContext.UserRoles.Add(
             new UserRole(
                 user.Id,
                 superAdminRole.Id));
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(
+            cancellationToken);
     }
 }
