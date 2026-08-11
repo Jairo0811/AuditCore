@@ -36,6 +36,8 @@ const navigation = [
   { to: "/roles", label: "Roles", icon: ShieldCheck },
 ];
 
+const brandMark = "/assets/brand/auditcore-mark.png";
+
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -58,7 +60,7 @@ export function AppShell() {
       <aside className={`sidebar ${menuOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-header">
           <NavLink to="/dashboard" className="sidebar-brand" onClick={() => setMenuOpen(false)}>
-            <span className="sidebar-brand-mark">✓</span>
+            <img className="sidebar-brand-mark" src={brandMark} alt="" aria-hidden="true" />
             <span>AUDIT<strong>CORE</strong></span>
           </NavLink>
 
@@ -104,7 +106,10 @@ export function AppShell() {
           <button type="button" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}>
             <Menu size={22} />
           </button>
-          <span>AUDIT<strong>CORE</strong></span>
+          <div className="mobile-brand">
+            <img src={brandMark} alt="" aria-hidden="true" />
+            <span>AUDIT<strong>CORE</strong></span>
+          </div>
         </header>
         <Outlet />
       </div>
