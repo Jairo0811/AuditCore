@@ -1,6 +1,19 @@
 import { ResourceManager } from "../../../components/ResourceManager";
+import { useLookupOptions } from "../../../hooks/useLookupOptions";
+
+interface PermissionLookup {
+  id: string;
+  code: string;
+  name: string;
+}
 
 export function RolesPage() {
+  const permissions = useLookupOptions<PermissionLookup>(
+    "permissions",
+    "/permissions",
+    (item) => `${item.code} — ${item.name}`,
+  );
+
   return (
     <ResourceManager
       title="Roles"
@@ -23,23 +36,38 @@ export function RolesPage() {
         { name: "name", label: "Nombre", required: true },
         { name: "code", label: "Código", required: true },
         { name: "description", label: "Descripción", type: "textarea" },
-        { name: "isActive", label: "Activo (true/false)", required: true },
+        {
+          name: "isActive",
+          label: "Estado",
+          type: "select",
+          required: true,
+          options: [
+            { label: "Activo", value: "true" },
+            { label: "Inactivo", value: "false" },
+          ],
+        },
       ]}
       mapUpdate={(values) => ({
         name: values.name,
         code: values.code,
         description: values.description || null,
-        isActive: values.isActive === "true" || values.isActive === "1",
+        isActive: values.isActive === "true",
       })}
       rowActions={[
         {
           label: "Permisos",
           endpoint: (row) => `/roles/${row.id}/permissions`,
-          body: () => ({
-            permissionIds: (window.prompt("IDs de permisos separados por coma:") ?? "")
-              .split(",")
-              .map((value) => value.trim())
-              .filter(Boolean),
+          fields: [
+            {
+              name: "permissionIds",
+              label: "Permisos asignados",
+              type: "multiselect",
+              options: permissions.options,
+            },
+          ],
+          submitLabel: "Guardar permisos",
+          body: (_row, values) => ({
+            permissionIds: values.permissionIds ? values.permissionIds.split(",").filter(Boolean) : [],
           }),
         },
       ]}
