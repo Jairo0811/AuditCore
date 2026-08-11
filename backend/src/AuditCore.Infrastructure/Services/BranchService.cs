@@ -47,9 +47,8 @@ public sealed class BranchService : IBranchService
         _tenantGuard.EnsureOrganization(request.OrganizationId);
         if (!await _dbContext.Organizations.AnyAsync(x => x.Id == request.OrganizationId, cancellationToken))
             throw new InvalidOperationException("La organización indicada no existe.");
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Branches.AnyAsync(x => x.OrganizationId == request.OrganizationId && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe una sucursal con el código '{code}' en esta organización.");
+
+        var code = await GenerateUniqueCodeAsync(request.OrganizationId, request.Name, cancellationToken);
         var branch = new Branch(request.OrganizationId, request.Name, code, request.Address);
         _dbContext.Branches.Add(branch);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -61,10 +60,8 @@ public sealed class BranchService : IBranchService
         var branch = await _dbContext.Branches.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (branch is null) return null;
         _tenantGuard.EnsureOrganization(branch.OrganizationId);
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Branches.AnyAsync(x => x.Id != id && x.OrganizationId == branch.OrganizationId && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe una sucursal con el código '{code}' en esta organización.");
-        branch.Update(request.Name, code, request.Address, request.IsActive);
+
+        branch.Update(request.Name, branch.Code, request.Address, request.IsActive);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return await GetByIdAsync(id, cancellationToken);
     }
@@ -81,9 +78,21 @@ public sealed class BranchService : IBranchService
         return true;
     }
 
-    private static string NormalizeCode(string code)
+    private async Task<string> GenerateUniqueCodeAsync(Guid organizationId, string name, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(code);
-        return code.Trim().ToUpperInvariant();
+        var prefix = EntityCodeGenerator.BuildPrefix(name, "SUC");
+        var existingCodes = await _dbContext.Branches
+            .AsNoTracking()
+            .Where(x => x.OrganizationId == organizationId && x.Code.StartsWith(prefix + "-"))
+            .Select(x => x.Code)
+            .ToListAsync(cancellationToken);
+
+        var nextSequence = existingCodes
+            .Select(code => code[(prefix.Length + 1)..])
+            .Select(value => int.TryParse(value, out var sequence) ? sequence : 0)
+            .DefaultIfEmpty(0)
+            .Max() + 1;
+
+        return $"{prefix}-{nextSequence:000}";
     }
 }
