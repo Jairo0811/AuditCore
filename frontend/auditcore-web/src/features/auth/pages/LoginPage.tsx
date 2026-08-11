@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
-import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -54,13 +53,13 @@ export function LoginPage() {
 
   return (
     <main className="login-page">
-      <section className="login-brand">
-        <div className="brand-symbol"><ShieldCheck size={46} strokeWidth={1.8} /></div>
-        <p className="eyebrow">IT AUDIT & COMPLIANCE PLATFORM</p>
-        <h1>AUDIT<span>CORE</span></h1>
-        <p className="brand-description">
-          Gestiona auditorías, riesgos, hallazgos, evidencias y cumplimiento desde una sola plataforma empresarial.
-        </p>
+      <section className="login-brand" aria-label="AuditCore Enterprise IT Audit & Compliance Platform">
+        <div className="login-brand-visual">
+          <img
+            src="/assets/brand/auditcore-login-banner.webp"
+            alt="AuditCore — Enterprise IT Audit & Compliance Platform. Audita, evalúa, protege."
+          />
+        </div>
       </section>
 
       <section className="login-panel">
