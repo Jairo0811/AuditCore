@@ -42,15 +42,14 @@ interface ResourceManagerProps {
   rowActions?: ResourceRowAction[];
 }
 
+interface ProblemDetails {
+  title?: string;
+  detail?: string;
+}
+
 function normalizeValue(field: ResourceField, value: string) {
-  if (field.type === "number") {
-    return value === "" ? null : Number(value);
-  }
-
-  if (field.type === "datetime-local") {
-    return value ? new Date(value).toISOString() : null;
-  }
-
+  if (field.type === "number") return value === "" ? null : Number(value);
+  if (field.type === "datetime-local") return value ? new Date(value).toISOString() : null;
   return value === "" ? null : value;
 }
 
@@ -59,6 +58,20 @@ function formatCell(value: unknown) {
   if (typeof value === "boolean") return value ? "Sí" : "No";
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (typeof error !== "object" || error === null) return fallback;
+
+  const response = (error as { response?: { data?: unknown } }).response;
+  if (!response) return fallback;
+
+  if (typeof response.data === "string" && response.data.trim()) {
+    return response.data;
+  }
+
+  const problem = response.data as ProblemDetails | undefined;
+  return problem?.detail || problem?.title || fallback;
 }
 
 export function ResourceManager({
@@ -79,6 +92,7 @@ export function ResourceManager({
   const [selected, setSelected] = useState<ResourceRecord | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
 
   const resourceQuery = useQuery({
     queryKey: [queryKey],
@@ -98,6 +112,7 @@ export function ResourceManager({
   const saveMutation = useMutation({
     mutationFn: async () => {
       setError(null);
+      setPageError(null);
       const fields = mode === "edit" ? updateFields : createFields;
       const normalized = Object.fromEntries(
         fields.map((field) => [field.name, normalizeValue(field, values[field.name] ?? "")]),
@@ -117,17 +132,26 @@ export function ResourceManager({
       setValues(initialCreateValues);
       await queryClient.invalidateQueries({ queryKey: [queryKey] });
     },
-    onError: () => setError("No fue posible guardar los cambios. Revisa los datos y permisos."),
+    onError: (mutationError) =>
+      setError(getApiErrorMessage(mutationError, "No fue posible guardar los cambios. Revisa los datos y permisos.")),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => apiClient.delete(`${endpoint}/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [queryKey] }),
+    mutationFn: async (id: string) => {
+      setPageError(null);
+      await apiClient.delete(`${endpoint}/${id}`);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: [queryKey] });
+    },
+    onError: (mutationError) =>
+      setPageError(getApiErrorMessage(mutationError, "No fue posible eliminar el registro.")),
   });
 
   const actionMutation = useMutation({
     mutationFn: async ({ row, action }: { row: ResourceRecord; action: ResourceRowAction }) => {
       if (action.confirm && !window.confirm(action.confirm)) return;
+      setPageError(null);
       const method = action.method ?? "put";
       await apiClient.request({
         url: action.endpoint(row),
@@ -135,7 +159,11 @@ export function ResourceManager({
         data: action.body?.(row),
       });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [queryKey] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: [queryKey] });
+    },
+    onError: (mutationError) =>
+      setPageError(getApiErrorMessage(mutationError, "No fue posible completar la acción solicitada.")),
   });
 
   function openCreate() {
@@ -151,9 +179,7 @@ export function ResourceManager({
       Object.fromEntries(
         updateFields.map((field) => {
           const raw = row[field.name];
-          if (field.type === "datetime-local" && typeof raw === "string") {
-            return [field.name, raw.slice(0, 16)];
-          }
+          if (field.type === "datetime-local" && typeof raw === "string") return [field.name, raw.slice(0, 16)];
           return [field.name, raw === null || raw === undefined ? "" : String(raw)];
         }),
       ),
@@ -181,6 +207,12 @@ export function ResourceManager({
           )}
         </div>
       </header>
+
+      {pageError && (
+        <div className="panel-state error-message" role="alert">
+          {pageError}
+        </div>
+      )}
 
       {resourceQuery.isLoading && <div className="panel-state">Cargando información...</div>}
       {resourceQuery.isError && <div className="panel-state error-message">No fue posible cargar el módulo.</div>}
@@ -225,7 +257,8 @@ export function ResourceManager({
                               type="button"
                               className="icon-button danger-button"
                               title="Eliminar"
-                              onClick={() => window.confirm("¿Eliminar este registro?") && deleteMutation.mutate(row.id!)}
+                              disabled={deleteMutation.isPending}
+                              onClick={() => window.confirm("¿Eliminar este registro? Esta acción no se puede deshacer.") && deleteMutation.mutate(row.id!)}
                             >
                               <Trash2 size={15} />
                             </button>
