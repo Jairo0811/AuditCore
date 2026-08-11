@@ -53,9 +53,8 @@ public sealed class AuditService : IAuditService
         _tenantGuard.EnsureOrganization(request.OrganizationId);
         if (!await _dbContext.Organizations.AnyAsync(x => x.Id == request.OrganizationId, cancellationToken))
             throw new InvalidOperationException("La organización indicada no existe.");
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Audits.AnyAsync(x => x.OrganizationId == request.OrganizationId && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe una auditoría con el código '{code}' en esta organización.");
+
+        var code = await new SequentialCodeGenerator(_dbContext).NextAuditCodeAsync(request.OrganizationId, cancellationToken);
         var audit = new Audit(request.OrganizationId, code, request.Title, request.Objective, request.Scope);
         _dbContext.Audits.Add(audit);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -67,10 +66,7 @@ public sealed class AuditService : IAuditService
         var audit = await _dbContext.Audits.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (audit is null) return null;
         _tenantGuard.EnsureOrganization(audit.OrganizationId);
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Audits.AnyAsync(x => x.Id != id && x.OrganizationId == audit.OrganizationId && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe otra auditoría con el código '{code}' en esta organización.");
-        audit.Update(code, request.Title, request.Objective, request.Scope);
+        audit.Update(audit.Code, request.Title, request.Objective, request.Scope);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return await GetByIdAsync(id, cancellationToken);
     }
@@ -102,11 +98,5 @@ public sealed class AuditService : IAuditService
         changeState(audit);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
-    }
-
-    private static string NormalizeCode(string code)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(code);
-        return code.Trim().ToUpperInvariant();
     }
 }

@@ -51,9 +51,7 @@ public sealed class FindingService : IFindingService
         _tenantGuard.EnsureOrganization(audit.OrganizationId);
         await ValidateRiskAsync(request.RiskId, request.AuditId, cancellationToken);
         await ValidateResponsibleUserAsync(request.ResponsibleUserId, audit.OrganizationId, cancellationToken);
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Findings.AnyAsync(x => x.AuditId == request.AuditId && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe un hallazgo con el código '{code}' en esta auditoría.");
+        var code = await new SequentialCodeGenerator(_dbContext).NextFindingCodeAsync(request.AuditId, cancellationToken);
         var finding = new Finding(request.AuditId, code, request.Title, request.Condition, request.Criteria,
             request.Cause, request.Effect, request.Recommendation, request.Severity,
             request.RiskId, request.ResponsibleUserId, request.DueDateUtc);
@@ -70,10 +68,7 @@ public sealed class FindingService : IFindingService
         _tenantGuard.EnsureOrganization(audit.OrganizationId);
         await ValidateRiskAsync(request.RiskId, finding.AuditId, cancellationToken);
         await ValidateResponsibleUserAsync(request.ResponsibleUserId, audit.OrganizationId, cancellationToken);
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Findings.AnyAsync(x => x.Id != id && x.AuditId == finding.AuditId && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe otro hallazgo con el código '{code}' en esta auditoría.");
-        finding.Update(code, request.Title, request.Condition, request.Criteria, request.Cause, request.Effect,
+        finding.Update(finding.Code, request.Title, request.Condition, request.Criteria, request.Cause, request.Effect,
             request.Recommendation, request.Severity, request.RiskId, request.ResponsibleUserId, request.DueDateUtc);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return await GetByIdAsync(id, cancellationToken);
@@ -110,11 +105,5 @@ public sealed class FindingService : IFindingService
             ?? throw new InvalidOperationException("El responsable indicado no existe.");
         if (user.OrganizationId != organizationId || !user.IsActive || user.IsLocked)
             throw new InvalidOperationException("El responsable debe pertenecer a la organización y estar activo/desbloqueado.");
-    }
-
-    private static string NormalizeCode(string code)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(code);
-        return code.Trim().ToUpperInvariant();
     }
 }

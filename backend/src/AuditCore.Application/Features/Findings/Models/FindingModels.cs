@@ -25,7 +25,6 @@ public sealed record FindingDto(
 public sealed record CreateFindingRequest(
     Guid AuditId,
     Guid? RiskId,
-    string Code,
     string Title,
     string Condition,
     string Criteria,
@@ -38,7 +37,6 @@ public sealed record CreateFindingRequest(
 
 public sealed record UpdateFindingRequest(
     Guid? RiskId,
-    string Code,
     string Title,
     string Condition,
     string Criteria,

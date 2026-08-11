@@ -29,7 +29,7 @@ export function RisksPage() {
   return (
     <ResourceManager
       title="Riesgos"
-      description="Registra, evalúa y da seguimiento al tratamiento de riesgos asociados a auditorías."
+      description="Registra, evalúa y da seguimiento al tratamiento de riesgos asociados a auditorías. El código se genera automáticamente."
       endpoint="/risks"
       queryKey="risks"
       columns={[
@@ -50,7 +50,6 @@ export function RisksPage() {
           options: audits.options,
           placeholder: audits.isLoading ? "Cargando auditorías..." : "Selecciona una auditoría",
         },
-        { name: "code", label: "Código", required: true },
         { name: "title", label: "Título", required: true },
         { name: "description", label: "Descripción", type: "textarea" },
         { name: "probability", label: "Probabilidad (1-5)", type: "number", min: 1, max: 5, required: true, defaultValue: 1 },
@@ -65,7 +64,6 @@ export function RisksPage() {
         },
       ]}
       updateFields={[
-        { name: "code", label: "Código", required: true },
         { name: "title", label: "Título", required: true },
         { name: "description", label: "Descripción", type: "textarea" },
         { name: "probability", label: "Probabilidad (1-5)", type: "number", min: 1, max: 5, required: true },
