@@ -1,6 +1,19 @@
 import { ResourceManager } from "../../../components/ResourceManager";
+import { useLookupOptions } from "../../../hooks/useLookupOptions";
+
+interface OrganizationLookup {
+  id: string;
+  code: string;
+  name: string;
+}
 
 export function BranchesPage() {
+  const organizations = useLookupOptions<OrganizationLookup>(
+    "organizations",
+    "/organizations",
+    (item) => `${item.code} — ${item.name}`,
+  );
+
   return (
     <ResourceManager
       title="Sucursales"
@@ -15,7 +28,14 @@ export function BranchesPage() {
         { key: "isActive", label: "Activa" },
       ]}
       createFields={[
-        { name: "organizationId", label: "ID de organización", required: true },
+        {
+          name: "organizationId",
+          label: "Organización",
+          type: "select",
+          required: true,
+          options: organizations.options,
+          placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
+        },
         { name: "name", label: "Nombre", required: true },
         { name: "code", label: "Código", required: true },
         { name: "address", label: "Dirección", type: "textarea" },
@@ -24,9 +44,23 @@ export function BranchesPage() {
         { name: "name", label: "Nombre", required: true },
         { name: "code", label: "Código", required: true },
         { name: "address", label: "Dirección", type: "textarea" },
-        { name: "isActive", label: "Activa (true/false)", required: true },
+        {
+          name: "isActive",
+          label: "Estado",
+          type: "select",
+          required: true,
+          options: [
+            { label: "Activa", value: "true" },
+            { label: "Inactiva", value: "false" },
+          ],
+        },
       ]}
-      mapUpdate={(values) => ({ ...values, address: values.address || null, isActive: values.isActive === "true" || values.isActive === "1" })}
+      mapUpdate={(values) => ({
+        name: values.name,
+        code: values.code,
+        address: values.address || null,
+        isActive: values.isActive === "true",
+      })}
       allowDelete
     />
   );
