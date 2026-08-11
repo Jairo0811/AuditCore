@@ -2,23 +2,17 @@
 
 <img src="./docs/images/auditcore-logo.png" alt="Logo de AuditCore" width="520" />
 
-<br />
-<br />
+<br/><br/>
 
-<div align="center">
 <img src="https://img.shields.io/badge/ITLA-2017--C2-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
-<div/>
-
 <img src="https://img.shields.io/badge/Estado-Full%20Stack%20completado-22C55E?style=for-the-badge" alt="Estado Full Stack completado" />
 <img src="https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt="ASP.NET Core 10" />
 <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220" alt="React 19" />
 <img src="https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6" />
 <img src="https://img.shields.io/badge/SQL_Server-2025-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white" alt="SQL Server 2025" />
-<img src="https://img.shields.io/badge/Architecture-Clean-14B8A6?style=for-the-badge" alt="Clean Architecture" />
 <img src="https://img.shields.io/badge/CI-Passing-22C55E?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI Passing" />
 
-<br />
-<br />
+<br/><br/>
 
 <strong>Plataforma full stack para auditoría de TI, cumplimiento, riesgos, evidencias, hallazgos y planes de acción.</strong>
 
@@ -30,9 +24,7 @@
 
 **AuditCore** es una plataforma web orientada a la gestión integral de auditorías de Tecnologías de la Información. Permite planificar y ejecutar auditorías, evaluar controles, registrar riesgos y hallazgos, gestionar evidencias, dar seguimiento a planes de acción y generar información ejecutiva.
 
-El proyecto nace como una reconstrucción moderna de una experiencia académica de la asignatura **Auditoría Informática (SOF-009)** del Instituto Tecnológico de Las Américas (ITLA), cursada durante el período **2017-C2**. La exposición académica original sobre COBIT y administración de datos sirvió como base conceptual para evolucionar la idea hacia una aplicación profesional.
-
----
+El proyecto nace como una reconstrucción moderna de una experiencia académica de **Auditoría Informática (SOF-009)** del ITLA, cursada durante **2017-C2**.
 
 ## 🎓 Contexto académico
 
@@ -56,58 +48,11 @@ El proyecto nace como una reconstrucción moderna de una experiencia académica 
 | Pedro Arturo de León Parra | 2015-3018 |
 | Yeidy Khris Utate | 2015-3143 |
 
-> El grupo participó en la exposición académica original. La reconstrucción moderna de AuditCore corresponde a una iniciativa posterior.
-
 ---
 
 ## ✅ Estado actual
 
-AuditCore cuenta con **backend y frontend funcionales e integrados**.
-
-### Backend
-
-- ✅ Clean Architecture: Domain, Application, Infrastructure y API
-- ✅ ASP.NET Core Web API sobre .NET 10
-- ✅ Entity Framework Core + SQL Server
-- ✅ Migraciones y ModelSnapshot sincronizados
-- ✅ JWT Bearer + refresh token rotation
-- ✅ RBAC por roles y permisos
-- ✅ Aislamiento multiempresa
-- ✅ Organizaciones, sucursales y departamentos
-- ✅ Usuarios, roles y permisos
-- ✅ Auditorías y ciclo de estados
-- ✅ Riesgos y tratamiento
-- ✅ Hallazgos y seguimiento
-- ✅ Evidencias con validación de archivos y SHA-256
-- ✅ Planes de acción
-- ✅ Marcos, controles, preguntas, evaluaciones y respuestas
-- ✅ Dashboard ejecutivo
-- ✅ Exportación CSV, Excel y PDF
-- ✅ ProblemDetails, rate limiting y health checks
-- ✅ Auditoría automática y soft delete
-- ✅ 57 pruebas automatizadas pasando
-- ✅ Backend CI en verde
-
-### Frontend
-
-- ✅ React 19 + TypeScript + Vite
-- ✅ Login conectado a la API
-- ✅ Sesión JWT y renovación automática
-- ✅ Rutas protegidas
-- ✅ Logout real
-- ✅ Dashboard conectado a métricas reales
-- ✅ Shell responsive y navegación modular
-- ✅ Gestión de auditorías
-- ✅ Gestión de riesgos
-- ✅ Gestión de hallazgos
-- ✅ Evidencias: carga, consulta, descarga y eliminación
-- ✅ Planes de acción y progreso
-- ✅ Marcos y controles
-- ✅ Workbench de evaluaciones
-- ✅ Organizaciones, sucursales y departamentos
-- ✅ Usuarios y roles
-- ✅ Reportes CSV, Excel y PDF
-- ✅ Frontend CI: lint + build en verde
+AuditCore cuenta con backend y frontend funcionales e integrados, autenticación JWT, RBAC, aislamiento multiempresa, gestión de auditorías, riesgos, hallazgos, evidencias, planes de acción, marcos de control, reportes y Dashboard ejecutivo. El backend mantiene 57 pruebas automatizadas y los pipelines de backend/frontend se validan mediante GitHub Actions.
 
 ---
 
@@ -145,14 +90,20 @@ AuditCore cuenta con **backend y frontend funcionales e integrados**.
 - React Hook Form
 - Zod
 - Recharts
-- Lucide React
 
-### Ingeniería
+### Ingeniería, calidad y CI/CD
+
+<p>
+  <img src="https://skillicons.dev/icons?i=git,github,githubactions" alt="Git, GitHub y GitHub Actions" />
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/GitHub%20Actions-CI%2FCD-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="GitHub Actions" />
+  <img src="https://img.shields.io/badge/xUnit-57%20tests-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="xUnit" />
+</p>
 
 - Clean Architecture
-- SOLID
-- DRY
-- KISS
+- SOLID, DRY y KISS
 - Git / GitHub
 - GitHub Actions
 - Arquitectura modular
@@ -165,33 +116,17 @@ AuditCore cuenta con **backend y frontend funcionales e integrados**.
 ```text
 AuditCore/
 ├── backend/
-│   ├── AuditCore.slnx
 │   ├── src/
 │   │   ├── AuditCore.Domain/
 │   │   ├── AuditCore.Application/
 │   │   ├── AuditCore.Infrastructure/
 │   │   └── AuditCore.Api/
 │   └── tests/
-│       ├── AuditCore.Domain.Tests/
-│       ├── AuditCore.Application.Tests/
-│       └── AuditCore.Api.IntegrationTests/
-│
-├── frontend/
-│   └── auditcore-web/
-│       └── src/
-│           ├── app/
-│           ├── components/
-│           ├── features/
-│           ├── lib/
-│           ├── services/
-│           └── styles/
-│
+├── frontend/auditcore-web/
 └── .github/workflows/
     ├── backend-ci.yml
     └── frontend-ci.yml
 ```
-
-Dependencias del backend:
 
 ```text
 Domain ← Application ← Infrastructure ← API
@@ -201,9 +136,7 @@ Domain ← Application ← Infrastructure ← API
 
 ## 🔐 Seguridad
 
-AuditCore implementa access tokens JWT de corta duración, refresh tokens rotativos, políticas de autorización por permiso, aislamiento por organización, rate limiting en autenticación, validación de evidencias, manejo global de errores y auditoría automática de cambios.
-
-Los secretos de desarrollo y producción deben gestionarse fuera del repositorio mediante variables de entorno, User Secrets o un gestor de secretos.
+AuditCore implementa access tokens JWT de corta duración, refresh tokens rotativos, políticas de autorización por permiso, aislamiento por organización, rate limiting, validación de evidencias, manejo global de errores y auditoría automática de cambios.
 
 ---
 
@@ -215,10 +148,6 @@ Los secretos de desarrollo y producción deben gestionarse fuera del repositorio
 cd backend
 dotnet restore .\AuditCore.slnx
 dotnet build .\AuditCore.slnx
-dotnet ef database update `
-  --project .\src\AuditCore.Infrastructure\AuditCore.Infrastructure.csproj `
-  --startup-project .\src\AuditCore.Api\AuditCore.Api.csproj `
-  --context AuditCoreDbContext
 dotnet run --project .\src\AuditCore.Api\AuditCore.Api.csproj
 ```
 
@@ -230,29 +159,14 @@ npm ci
 npm run dev
 ```
 
-Por defecto el frontend espera la API en:
-
-```text
-http://localhost:5047/api
-```
-
-Puede cambiarse mediante la variable de entorno usada por el cliente HTTP del frontend.
-
----
-
 ## 🧪 Validación
-
-### Backend
 
 ```powershell
 cd backend
-dotnet build .\AuditCore.slnx
 dotnet test .\AuditCore.slnx
 ```
 
 Estado validado: **57/57 pruebas pasando**.
-
-### Frontend
 
 ```powershell
 cd frontend\auditcore-web
@@ -262,12 +176,6 @@ npm run build
 ```
 
 Estado validado: **lint y build pasando en GitHub Actions**.
-
----
-
-## 📈 Evolución futura
-
-La versión actual cubre el alcance funcional full stack. Las mejoras futuras pueden enfocarse en experiencia de usuario avanzada, catálogos adicionales de marcos de control, notificaciones, almacenamiento externo de evidencias, observabilidad, despliegue cloud y pruebas E2E del navegador.
 
 ---
 
