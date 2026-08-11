@@ -1,0 +1,85 @@
+name: Security CI
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'e2e/**'
+      - '.github/workflows/security-ci.yml'
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet-vulnerabilities:
+    name: .NET dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        working-directory: backend
+        run: dotnet restore ./AuditCore.slnx
+
+      - name: Audit NuGet dependencies
+        working-directory: backend
+        shell: bash
+        run: |
+          set -o pipefail
+          dotnet list ./AuditCore.slnx package --vulnerable --include-transitive 2>&1 | tee /tmp/nuget-audit.txt
+          if grep -Eqi 'has the following vulnerable packages|tiene los siguientes paquetes vulnerables' /tmp/nuget-audit.txt; then
+            echo 'Vulnerable NuGet packages were detected.'
+            exit 1
+          fi
+
+  npm-runtime-vulnerabilities:
+    name: Frontend runtime dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/auditcore-web/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend/auditcore-web
+        run: npm ci
+
+      - name: Audit production dependencies
+        working-directory: frontend/auditcore-web
+        run: npm audit --omit=dev --audit-level=high
+
+  e2e-runtime-vulnerabilities:
+    name: E2E runtime dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install E2E dependencies
+        working-directory: e2e
+        run: npm install
+
+      - name: Confirm E2E has no production dependency exposure
+        working-directory: e2e
+        run: npm audit --omit=dev --audit-level=high
