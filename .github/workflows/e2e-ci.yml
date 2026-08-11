@@ -97,15 +97,15 @@ jobs:
           exit 1
 
       - name: Install frontend dependencies
-        working-directory: frontend/auditcore-web
+        working-directory: frontend
         run: npm ci
 
       - name: Build frontend
-        working-directory: frontend/auditcore-web
+        working-directory: frontend
         run: npm run build
 
       - name: Start frontend preview
-        working-directory: frontend/auditcore-web
+        working-directory: frontend
         run: nohup npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/auditcore-web.log 2>&1 &
 
       - name: Wait for frontend
