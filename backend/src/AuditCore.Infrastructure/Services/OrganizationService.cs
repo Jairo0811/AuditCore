@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using AuditCore.Application.Common.Interfaces;
 using AuditCore.Application.Features.Organizations;
 using AuditCore.Application.Features.Organizations.Models;
@@ -8,6 +10,11 @@ namespace AuditCore.Infrastructure.Services;
 
 public sealed class OrganizationService : IOrganizationService
 {
+    private static readonly HashSet<string> IgnoredCodeWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "DE", "DEL", "LA", "LAS", "EL", "LOS", "Y", "E", "OF", "THE", "AND"
+    };
+
     private readonly IAuditCoreDbContext _dbContext;
     private readonly TenantGuard _tenantGuard;
 
@@ -39,12 +46,13 @@ public sealed class OrganizationService : IOrganizationService
     {
         if (_tenantGuard.RestrictedOrganizationId.HasValue)
             throw new UnauthorizedAccessException("Solo un superadministrador puede crear organizaciones.");
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Organizations.AnyAsync(x => x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe una organización con el código '{code}'.");
+
+        var code = await GenerateUniqueCodeAsync(request.Name, cancellationToken);
         var organization = new Organization(request.Name, code, request.Description);
+
         _dbContext.Organizations.Add(organization);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
         return Map(organization);
     }
 
@@ -53,11 +61,10 @@ public sealed class OrganizationService : IOrganizationService
         _tenantGuard.EnsureOrganization(id);
         var organization = await _dbContext.Organizations.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (organization is null) return null;
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Organizations.AnyAsync(x => x.Id != id && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe una organización con el código '{code}'.");
-        organization.Update(request.Name, code, request.Description, request.IsActive);
+
+        organization.Update(request.Name, organization.Code, request.Description, request.IsActive);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
         return Map(organization);
     }
 
@@ -77,11 +84,61 @@ public sealed class OrganizationService : IOrganizationService
         return true;
     }
 
-    private static string NormalizeCode(string code)
+    private async Task<string> GenerateUniqueCodeAsync(string name, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(code);
-        return code.Trim().ToUpperInvariant();
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        var baseCode = BuildCodeFromName(name);
+        var candidate = baseCode;
+        var suffix = 2;
+
+        while (await _dbContext.Organizations.AnyAsync(x => x.Code == candidate, cancellationToken))
+        {
+            candidate = $"{baseCode}-{suffix}";
+            suffix++;
+        }
+
+        return candidate;
     }
+
+    private static string BuildCodeFromName(string name)
+    {
+        var normalized = RemoveDiacritics(name).ToUpperInvariant();
+        var words = normalized
+            .Split([' ', '-', '_', '.', ',', '/', '\\', '(', ')'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(KeepLettersAndDigits)
+            .Where(word => !string.IsNullOrWhiteSpace(word))
+            .ToArray();
+
+        var meaningfulWords = words
+            .Where(word => !IgnoredCodeWords.Contains(word))
+            .ToArray();
+
+        if (meaningfulWords.Length >= 2)
+        {
+            return string.Concat(meaningfulWords.Select(word => word[0]))[..Math.Min(10, meaningfulWords.Length)];
+        }
+
+        var source = meaningfulWords.FirstOrDefault() ?? words.FirstOrDefault() ?? "ORG";
+        return source[..Math.Min(12, source.Length)];
+    }
+
+    private static string RemoveDiacritics(string value)
+    {
+        var decomposed = value.Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(decomposed.Length);
+
+        foreach (var character in decomposed)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+                builder.Append(character);
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
+    }
+
+    private static string KeepLettersAndDigits(string value) =>
+        new(value.Where(char.IsLetterOrDigit).ToArray());
 
     private static OrganizationDto Map(Organization organization) =>
         new(organization.Id, organization.Name, organization.Code, organization.Description, organization.IsActive);
