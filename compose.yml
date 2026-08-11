@@ -52,7 +52,7 @@ services:
 
   web:
     build:
-      context: ./frontend/auditcore-web
+      context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: http://localhost:5047/api
