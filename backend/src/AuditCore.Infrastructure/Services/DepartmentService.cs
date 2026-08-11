@@ -49,9 +49,8 @@ public sealed class DepartmentService : IDepartmentService
     {
         _tenantGuard.EnsureOrganization(request.OrganizationId);
         await ValidateOrganizationAndBranchAsync(request.OrganizationId, request.BranchId, cancellationToken);
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Departments.AnyAsync(x => x.OrganizationId == request.OrganizationId && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe un departamento con el código '{code}' en esta organización.");
+
+        var code = await GenerateUniqueCodeAsync(request.OrganizationId, request.Name, cancellationToken);
         var department = new Department(request.OrganizationId, request.Name, code, request.BranchId);
         _dbContext.Departments.Add(department);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -64,10 +63,8 @@ public sealed class DepartmentService : IDepartmentService
         if (department is null) return null;
         _tenantGuard.EnsureOrganization(department.OrganizationId);
         await ValidateOrganizationAndBranchAsync(department.OrganizationId, request.BranchId, cancellationToken);
-        var code = NormalizeCode(request.Code);
-        if (await _dbContext.Departments.AnyAsync(x => x.Id != id && x.OrganizationId == department.OrganizationId && x.Code == code, cancellationToken))
-            throw new InvalidOperationException($"Ya existe un departamento con el código '{code}' en esta organización.");
-        department.Update(request.Name, code, request.BranchId, request.IsActive);
+
+        department.Update(request.Name, department.Code, request.BranchId, request.IsActive);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return await GetByIdAsync(id, cancellationToken);
     }
@@ -93,9 +90,21 @@ public sealed class DepartmentService : IDepartmentService
             throw new InvalidOperationException("La sucursal no pertenece a la organización del departamento.");
     }
 
-    private static string NormalizeCode(string code)
+    private async Task<string> GenerateUniqueCodeAsync(Guid organizationId, string name, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(code);
-        return code.Trim().ToUpperInvariant();
+        var prefix = EntityCodeGenerator.BuildPrefix(name, "DEP");
+        var existingCodes = await _dbContext.Departments
+            .AsNoTracking()
+            .Where(x => x.OrganizationId == organizationId && x.Code.StartsWith(prefix + "-"))
+            .Select(x => x.Code)
+            .ToListAsync(cancellationToken);
+
+        var nextSequence = existingCodes
+            .Select(code => code[(prefix.Length + 1)..])
+            .Select(value => int.TryParse(value, out var sequence) ? sequence : 0)
+            .DefaultIfEmpty(0)
+            .Max() + 1;
+
+        return $"{prefix}-{nextSequence:000}";
     }
 }
