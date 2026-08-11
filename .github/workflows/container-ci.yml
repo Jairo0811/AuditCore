@@ -38,4 +38,4 @@ jobs:
           docker build
           --build-arg VITE_API_URL=http://127.0.0.1:5047/api
           --tag auditcore-web:ci
-          ./frontend/auditcore-web
+          ./frontend
