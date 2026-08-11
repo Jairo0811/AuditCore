@@ -19,21 +19,49 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { getCurrentUser, logout } from "../features/auth/auth";
 
-const navigation = [
-  { to: "/dashboard", label: "Dashboard", icon: BarChart3 },
-  { to: "/audits", label: "Auditorías", icon: ClipboardCheck },
-  { to: "/risks", label: "Riesgos", icon: ShieldAlert },
-  { to: "/findings", label: "Hallazgos", icon: FileSearch },
-  { to: "/evidence", label: "Evidencias", icon: FileArchive },
-  { to: "/action-plans", label: "Planes de acción", icon: ListChecks },
-  { to: "/frameworks", label: "Marcos y controles", icon: ShieldCheck },
-  { to: "/assessments", label: "Evaluaciones", icon: Network },
-  { to: "/reports", label: "Reportes", icon: FileText },
-  { to: "/organizations", label: "Organizaciones", icon: Building2 },
-  { to: "/branches", label: "Sucursales", icon: GitBranch },
-  { to: "/departments", label: "Departamentos", icon: Network },
-  { to: "/users", label: "Usuarios", icon: Users },
-  { to: "/roles", label: "Roles", icon: ShieldCheck },
+type NavigationItem = {
+  to: string;
+  label: string;
+  icon: typeof BarChart3;
+};
+
+type NavigationGroup = {
+  label?: string;
+  items: NavigationItem[];
+};
+
+const navigationGroups: NavigationGroup[] = [
+  {
+    items: [{ to: "/dashboard", label: "Dashboard", icon: BarChart3 }],
+  },
+  {
+    label: "AUDITORÍA",
+    items: [
+      { to: "/audits", label: "Auditorías", icon: ClipboardCheck },
+      { to: "/risks", label: "Riesgos", icon: ShieldAlert },
+      { to: "/findings", label: "Hallazgos", icon: FileSearch },
+      { to: "/evidence", label: "Evidencias", icon: FileArchive },
+      { to: "/action-plans", label: "Planes de acción", icon: ListChecks },
+    ],
+  },
+  {
+    label: "CUMPLIMIENTO",
+    items: [
+      { to: "/frameworks", label: "Marcos y controles", icon: ShieldCheck },
+      { to: "/assessments", label: "Evaluaciones", icon: Network },
+      { to: "/reports", label: "Reportes", icon: FileText },
+    ],
+  },
+  {
+    label: "ADMINISTRACIÓN",
+    items: [
+      { to: "/organizations", label: "Organizaciones", icon: Building2 },
+      { to: "/branches", label: "Sucursales", icon: GitBranch },
+      { to: "/departments", label: "Departamentos", icon: Network },
+      { to: "/users", label: "Usuarios", icon: Users },
+      { to: "/roles", label: "Roles", icon: ShieldCheck },
+    ],
+  },
 ];
 
 const brandMark = "/assets/brand/auditcore-mark.png";
@@ -70,16 +98,21 @@ export function AppShell() {
         </div>
 
         <nav className="sidebar-nav" aria-label="Navegación principal">
-          {navigation.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
-            >
-              <Icon size={18} />
-              <span>{label}</span>
-            </NavLink>
+          {navigationGroups.map((group, groupIndex) => (
+            <div className="sidebar-nav-group" key={group.label ?? `primary-${groupIndex}`}>
+              {group.label && <p className="sidebar-nav-label">{group.label}</p>}
+              {group.items.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
+                >
+                  <Icon size={18} />
+                  <span>{label}</span>
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 
