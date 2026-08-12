@@ -1,9 +1,13 @@
+using AuditCore.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace AuditCore.Infrastructure.Persistence.Migrations;
 
+[DbContext(typeof(AuditCoreDbContext))]
+[Migration("20260812150000_AddUserOrganizationalStructure")]
 public partial class AddUserOrganizationalStructure : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
