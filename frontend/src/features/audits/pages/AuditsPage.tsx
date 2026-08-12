@@ -1,4 +1,5 @@
 import { ResourceManager } from "../../../components/ResourceManager";
+import { auditStatusLabels, labelFromMap } from "../../../lib/domainLabels";
 import { useLookupOptions } from "../../../hooks/useLookupOptions";
 
 interface OrganizationLookup {
@@ -32,12 +33,13 @@ export function AuditsPage() {
       description="Planifica, ejecuta y da seguimiento al ciclo completo de auditoría. El código se genera automáticamente."
       endpoint="/audits"
       queryKey="audits"
+      canEdit={(row) => [1, 2].includes(Number(row.status))}
       columns={[
         { key: "code", label: "Código" },
         { key: "title", label: "Título" },
         { key: "organizationName", label: "Organización" },
         { key: "leadAuditorName", label: "Auditor líder" },
-        { key: "status", label: "Estado" },
+        { key: "status", label: "Estado", render: (value) => labelFromMap(value, auditStatusLabels) },
         { key: "startDateUtc", label: "Inicio", render: (value) => typeof value === "string" ? new Date(value).toLocaleDateString() : "—" },
         { key: "endDateUtc", label: "Fin", render: (value) => typeof value === "string" ? new Date(value).toLocaleDateString() : "—" },
       ]}
@@ -63,6 +65,7 @@ export function AuditsPage() {
         {
           label: "Planificar",
           endpoint: (row) => `/audits/${row.id}/plan`,
+          isVisible: (row) => [1, 2].includes(Number(row.status)),
           fields: [
             {
               name: "leadAuditorUserId",
@@ -82,10 +85,10 @@ export function AuditsPage() {
             endDateUtc: new Date(values.endDateUtc).toISOString(),
           }),
         },
-        { label: "Iniciar", endpoint: (row) => `/audits/${row.id}/start` },
-        { label: "Completar", endpoint: (row) => `/audits/${row.id}/complete` },
-        { label: "Cerrar", endpoint: (row) => `/audits/${row.id}/close`, confirm: "¿Cerrar definitivamente esta auditoría?" },
-        { label: "Cancelar", endpoint: (row) => `/audits/${row.id}/cancel`, confirm: "¿Cancelar esta auditoría?" },
+        { label: "Iniciar", endpoint: (row) => `/audits/${row.id}/start`, isVisible: (row) => Number(row.status) === 2 },
+        { label: "Completar", endpoint: (row) => `/audits/${row.id}/complete`, isVisible: (row) => Number(row.status) === 3 },
+        { label: "Cerrar", endpoint: (row) => `/audits/${row.id}/close`, isVisible: (row) => Number(row.status) === 4, confirm: "¿Cerrar definitivamente esta auditoría?" },
+        { label: "Cancelar", endpoint: (row) => `/audits/${row.id}/cancel`, isVisible: (row) => [1, 2, 3].includes(Number(row.status)), confirm: "¿Cancelar esta auditoría?" },
       ]}
     />
   );
