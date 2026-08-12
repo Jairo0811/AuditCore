@@ -13,9 +13,7 @@ public sealed class User : BaseAuditableEntity
         string firstName,
         string lastName,
         string email,
-        string passwordHash,
-        Guid? branchId = null,
-        Guid? departmentId = null)
+        string passwordHash)
     {
         if (organizationId == Guid.Empty)
         {
@@ -25,8 +23,6 @@ public sealed class User : BaseAuditableEntity
         }
 
         OrganizationId = organizationId;
-        BranchId = branchId;
-        DepartmentId = departmentId;
         SetFirstName(firstName);
         SetLastName(lastName);
         SetEmail(email);
@@ -38,14 +34,6 @@ public sealed class User : BaseAuditableEntity
     public Guid OrganizationId { get; private set; }
 
     public Organization Organization { get; private set; } = null!;
-
-    public Guid? BranchId { get; private set; }
-
-    public Branch? Branch { get; private set; }
-
-    public Guid? DepartmentId { get; private set; }
-
-    public Department? Department { get; private set; }
 
     public string FirstName { get; private set; } = string.Empty;
 
@@ -75,12 +63,6 @@ public sealed class User : BaseAuditableEntity
         SetFirstName(firstName);
         SetLastName(lastName);
         SetEmail(email);
-    }
-
-    public void AssignStructure(Guid? branchId, Guid? departmentId)
-    {
-        BranchId = branchId;
-        DepartmentId = departmentId;
     }
 
     public void ChangePassword(string passwordHash)
