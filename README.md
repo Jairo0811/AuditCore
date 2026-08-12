@@ -277,9 +277,9 @@ La instalación de desarrollo crea un usuario administrador por defecto:
 |---|---|
 | Correo | `admin@auditcore.local` |
 | Rol | `SUPER_ADMIN` |
-| Contraseña | Configurada mediante `SeedData:AdminPassword` en `backend/src/AuditCore.Api/appsettings.Development.json` |
+| Contraseña | `AuditCore123..` |
 
-> Este acceso es exclusivamente para desarrollo y demostración local. No reutilices las credenciales de desarrollo en producción; configura secretos propios mediante variables de entorno o un proveedor de secretos.
+> La contraseña corresponde al valor actual de `SeedData:AdminPassword` en `backend/src/AuditCore.Api/appsettings.Development.json`. Este acceso es exclusivamente para desarrollo y demostración local. No reutilices estas credenciales en producción; configura secretos propios mediante variables de entorno o un proveedor de secretos.
 
 ---
 
