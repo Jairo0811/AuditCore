@@ -1083,6 +1083,9 @@ namespace AuditCore.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -1091,6 +1094,9 @@ namespace AuditCore.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime?>("DeletedAtUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -1140,6 +1146,10 @@ namespace AuditCore.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("OrganizationId", "Email")
                         .IsUnique();
@@ -1395,11 +1405,25 @@ namespace AuditCore.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("AuditCore.Domain.Entities.User", b =>
                 {
+                    b.HasOne("AuditCore.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AuditCore.Domain.Entities.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("AuditCore.Domain.Entities.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Department");
 
                     b.Navigation("Organization");
                 });
@@ -1454,6 +1478,10 @@ namespace AuditCore.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("AuditCore.Domain.Entities.User", b =>
                 {
+                    b.Navigation("Branch");
+
+                    b.Navigation("Department");
+
                     b.Navigation("RefreshTokens");
 
                     b.Navigation("UserRoles");
