@@ -27,19 +27,22 @@ internal static class AuditSummaryPdfBuilder
     private const double MetricHeight = 42;
     private const double TableTop = 390;
     private const double HeaderRowHeight = 28;
-    private const double RowHeight = 44;
-    private const int RowsPerPage = 7;
+    private const double MinRowHeight = 34;
+    private const double CellHorizontalPadding = 8;
+    private const double CellVerticalPadding = 10;
+    private const double CellLineHeight = 10;
+    private const double TableBottom = 52;
     private const double EmptyStateY = 182;
     private const double EmptyStateHeight = 170;
 
     private static readonly ColumnDefinition[] Columns =
     [
-        new("CÓDIGO", 80, 12, 1),
-        new("TÍTULO", 255, 38, 2),
-        new("ORGANIZACIÓN", 180, 27, 2),
-        new("ESTADO", 90, 14, 1),
-        new("INICIO", 78, 10, 1),
-        new("FIN", 78, 10, 1)
+        new("CÓDIGO", 80, 12),
+        new("TÍTULO", 255, 38),
+        new("ORGANIZACIÓN", 180, 27),
+        new("ESTADO", 90, 14),
+        new("INICIO", 78, 10),
+        new("FIN", 78, 10)
     ];
 
     public static byte[] Build(IReadOnlyCollection<string[]> rows)
@@ -50,13 +53,19 @@ internal static class AuditSummaryPdfBuilder
         var logoWidth = logo.Width * logoScale;
         var logoHeight = logo.Height * logoScale;
         var rowList = rows.ToArray();
-        var pageCount = Math.Max(1, (int)Math.Ceiling(rowList.Length / (double)RowsPerPage));
+        var pages = PaginateRows(rowList);
+        var pageCount = Math.Max(1, pages.Count);
         var pageStreams = new List<string>(pageCount);
 
         for (var pageIndex = 0; pageIndex < pageCount; pageIndex++)
         {
-            var pageRows = rowList.Skip(pageIndex * RowsPerPage).Take(RowsPerPage).ToArray();
-            pageStreams.Add(BuildPageContent(pageRows, rowList.Length, pageIndex + 1, pageCount, logoWidth, logoHeight));
+            pageStreams.Add(BuildPageContent(
+                pages[pageIndex],
+                rowList.Length,
+                pageIndex + 1,
+                pageCount,
+                logoWidth,
+                logoHeight));
         }
 
         return BuildPdfDocument(pageStreams, logo);
@@ -131,40 +140,95 @@ internal static class AuditSummaryPdfBuilder
 
         foreach (var column in Columns)
         {
-            DrawText(content, column.Header, x + 8, headerBottom + 9, 7.5, bold: true, color: "0.800 0.984 0.945");
+            DrawText(content, column.Header, x + CellHorizontalPadding, headerBottom + 9, 7.5, bold: true, color: "0.800 0.984 0.945");
             x += column.Width;
         }
 
-        var rowBottom = headerBottom - RowHeight;
+        var rowTop = headerBottom;
         var rowIndex = 0;
 
         foreach (var row in rows)
         {
+            var rowHeight = CalculateRowHeight(row);
+            var rowBottom = rowTop - rowHeight;
             var fill = rowIndex % 2 == 0 ? "0.031 0.098 0.169" : "0.035 0.114 0.192";
-            DrawRectangle(content, Margin, rowBottom, tableWidth, RowHeight, fill);
-            DrawRectangleStroke(content, Margin, rowBottom, tableWidth, RowHeight, "0.102 0.196 0.286", 0.45);
+
+            DrawRectangle(content, Margin, rowBottom, tableWidth, rowHeight, fill);
+            DrawRectangleStroke(content, Margin, rowBottom, tableWidth, rowHeight, "0.102 0.196 0.286", 0.45);
             x = Margin;
 
             for (var index = 0; index < Columns.Length; index++)
             {
                 var value = index < row.Length ? row[index] : string.Empty;
                 var color = index == 0 ? "0.345 0.918 0.831" : "0.843 0.890 0.933";
+
                 DrawWrappedText(
                     content,
                     value,
-                    x + 8,
-                    rowBottom + RowHeight - 15,
+                    x + CellHorizontalPadding,
+                    rowTop - CellVerticalPadding - 7.5,
                     7.5,
                     Columns[index].MaxCharactersPerLine,
-                    Columns[index].MaxLines,
                     bold: index == 0,
                     color: color);
+
                 x += Columns[index].Width;
             }
 
-            rowBottom -= RowHeight;
+            rowTop = rowBottom;
             rowIndex++;
         }
+    }
+
+    private static List<string[][]> PaginateRows(IReadOnlyList<string[]> rows)
+    {
+        if (rows.Count == 0)
+        {
+            return [Array.Empty<string[]>()];
+        }
+
+        var pages = new List<string[][]>();
+        var currentPage = new List<string[]>();
+        var availableHeight = TableTop - HeaderRowHeight - TableBottom;
+        var usedHeight = 0d;
+
+        foreach (var row in rows)
+        {
+            var rowHeight = CalculateRowHeight(row);
+
+            if (currentPage.Count > 0 && usedHeight + rowHeight > availableHeight)
+            {
+                pages.Add(currentPage.ToArray());
+                currentPage.Clear();
+                usedHeight = 0;
+            }
+
+            currentPage.Add(row);
+            usedHeight += rowHeight;
+        }
+
+        if (currentPage.Count > 0)
+        {
+            pages.Add(currentPage.ToArray());
+        }
+
+        return pages;
+    }
+
+    private static double CalculateRowHeight(string[] row)
+    {
+        var maxLines = 1;
+
+        for (var index = 0; index < Columns.Length; index++)
+        {
+            var value = index < row.Length ? row[index] : string.Empty;
+            var lineCount = WrapText(value, Columns[index].MaxCharactersPerLine).Count;
+            maxLines = Math.Max(maxLines, lineCount);
+        }
+
+        return Math.Max(
+            MinRowHeight,
+            (maxLines * CellLineHeight) + (CellVerticalPadding * 2));
     }
 
     private static void DrawFooter(StringBuilder content, int pageNumber, int pageCount)
@@ -260,29 +324,29 @@ internal static class AuditSummaryPdfBuilder
         double firstLineY,
         double fontSize,
         int maxCharactersPerLine,
-        int maxLines,
         bool bold = false,
         string color = "1 1 1")
     {
-        var lines = WrapText(value, maxCharactersPerLine, maxLines);
+        var lines = WrapText(value, maxCharactersPerLine);
         for (var index = 0; index < lines.Count; index++)
         {
-            DrawText(content, lines[index], x, firstLineY - (index * 10), fontSize, bold, color);
+            DrawText(content, lines[index], x, firstLineY - (index * CellLineHeight), fontSize, bold, color);
         }
     }
 
-    private static IReadOnlyList<string> WrapText(string value, int maxCharactersPerLine, int maxLines)
+    private static IReadOnlyList<string> WrapText(string value, int maxCharactersPerLine)
     {
         if (string.IsNullOrWhiteSpace(value)) return ["-"];
 
         var words = value.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var lines = new List<string>(maxLines);
+        var lines = new List<string>();
         var current = new StringBuilder();
         var wordIndex = 0;
 
-        while (wordIndex < words.Length && lines.Count < maxLines)
+        while (wordIndex < words.Length)
         {
             var word = words[wordIndex];
+
             if (current.Length == 0)
             {
                 if (word.Length <= maxCharactersPerLine)
@@ -292,10 +356,12 @@ internal static class AuditSummaryPdfBuilder
                     continue;
                 }
 
-                current.Append(word[..maxCharactersPerLine]);
+                lines.Add(word[..maxCharactersPerLine]);
                 words[wordIndex] = word[maxCharactersPerLine..];
+                continue;
             }
-            else if (current.Length + 1 + word.Length <= maxCharactersPerLine)
+
+            if (current.Length + 1 + word.Length <= maxCharactersPerLine)
             {
                 current.Append(' ').Append(word);
                 wordIndex++;
@@ -306,15 +372,9 @@ internal static class AuditSummaryPdfBuilder
             current.Clear();
         }
 
-        if (current.Length > 0 && lines.Count < maxLines) lines.Add(current.ToString());
-
-        if (wordIndex < words.Length && lines.Count > 0)
+        if (current.Length > 0)
         {
-            var lastIndex = lines.Count - 1;
-            var last = lines[lastIndex];
-            lines[lastIndex] = last.Length <= maxCharactersPerLine - 3
-                ? last + "..."
-                : last[..Math.Max(1, maxCharactersPerLine - 3)] + "...";
+            lines.Add(current.ToString());
         }
 
         return lines.Count == 0 ? ["-"] : lines;
@@ -372,7 +432,7 @@ internal static class AuditSummaryPdfBuilder
         stream.Write(bytes, 0, bytes.Length);
     }
 
-    private sealed record ColumnDefinition(string Header, double Width, int MaxCharactersPerLine, int MaxLines);
+    private sealed record ColumnDefinition(string Header, double Width, int MaxCharactersPerLine);
 
     private sealed record PdfObject(byte[] Bytes)
     {
