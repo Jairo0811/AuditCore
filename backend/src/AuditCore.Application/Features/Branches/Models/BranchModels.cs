@@ -1,4 +1,4 @@
-﻿namespace AuditCore.Application.Features.Branches.Models;
+namespace AuditCore.Application.Features.Branches.Models;
 
 public sealed record BranchDto(
     Guid Id,
@@ -12,11 +12,9 @@ public sealed record BranchDto(
 public sealed record CreateBranchRequest(
     Guid OrganizationId,
     string Name,
-    string Code,
     string? Address);
 
 public sealed record UpdateBranchRequest(
     string Name,
-    string Code,
     string? Address,
     bool IsActive);
