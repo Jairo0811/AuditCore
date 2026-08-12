@@ -242,6 +242,18 @@ Vite expone normalmente la aplicación en:
 http://localhost:5173
 ```
 
+### 🔑 Acceso local de desarrollo
+
+La instalación de desarrollo crea un usuario administrador por defecto:
+
+| Campo | Valor |
+|---|---|
+| Correo | `admin@auditcore.local` |
+| Rol | `SUPER_ADMIN` |
+| Contraseña | Configurada mediante `SeedData:AdminPassword` en `backend/src/AuditCore.Api/appsettings.Development.json` |
+
+> Este acceso es exclusivamente para desarrollo y demostración local. No reutilices las credenciales de desarrollo en producción; configura secretos propios mediante variables de entorno o un proveedor de secretos.
+
 ---
 
 ## 🐳 Ejecución con Docker
