@@ -5,7 +5,7 @@
 <br/><br/>
 
 <img src="https://img.shields.io/badge/ITLA-2017--C2-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
-<img src="https://img.shields.io/badge/Estado-v1.0.0%20estable-22C55E?style=for-the-badge" alt="Estado v1.0.0 estable" />
+<img src="https://img.shields.io/badge/Estado-v1.1.0%20finalizada-22C55E?style=for-the-badge" alt="Estado v1.1.0 finalizada" />
 <img src="https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt="ASP.NET Core 10" />
 <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220" alt="React 19" />
 <img src="https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6" />
@@ -13,6 +13,7 @@
 <img src="https://img.shields.io/badge/E2E-Playwright-2EAD33?style=for-the-badge&logo=playwright" alt="Playwright E2E" />
 <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready" />
 <img src="https://img.shields.io/badge/CI-Passing-22C55E?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI Passing" />
+<img src="https://img.shields.io/badge/Accesibilidad-NORTIC%20B2%20%2F%20WCAG%202.0-0EA5E9?style=for-the-badge" alt="Accesibilidad alineada con NORTIC B2 y WCAG 2.0" />
 
 <br/><br/>
 
@@ -26,7 +27,9 @@
 
 **AuditCore** es una plataforma web orientada a la gestión integral de auditorías de Tecnologías de la Información. Permite planificar y ejecutar auditorías, evaluar controles, registrar riesgos y hallazgos, gestionar evidencias, dar seguimiento a planes de acción y generar información ejecutiva.
 
-El proyecto nace como una reconstrucción moderna de una experiencia académica de **Auditoría Informática (SOF-009)** del ITLA, cursada durante **2017-C2**, evolucionada hasta una aplicación full stack con arquitectura limpia, seguridad, CI, pruebas automatizadas, contenedores y configuración de producción.
+El proyecto surge como una evolución profesional posterior a la asignatura **Auditoría Informática (SOF-009)** del ITLA, cursada durante **2017-C2**. La materia fue de naturaleza teórica: AuditCore no fue el proyecto final original de la asignatura, sino una reconstrucción posterior que toma como base conceptual la exposición realizada por el grupo y transforma esos contenidos en una aplicación full stack moderna.
+
+A partir de esa exposición se desarrolló una plataforma real alrededor de los conceptos trabajados en clase: auditoría de TI, controles, riesgos, hallazgos, evidencias, planes de acción, cumplimiento, trazabilidad y administración organizacional.
 
 ## 🎓 Contexto académico
 
@@ -37,7 +40,8 @@ El proyecto nace como una reconstrucción moderna de una experiencia académica 
 | 👨‍🏫 Profesor | Simeon Clase Ulloa |
 | 📅 Período | 2017-C2 |
 | 📚 Naturaleza | Materia teórica |
-| 🧩 Base conceptual | COBIT y administración de datos |
+| 🧩 Base conceptual | Exposición grupal de la asignatura, COBIT y administración de datos |
+| 🛠️ Evolución posterior | Conversión de los contenidos académicos en una plataforma profesional de auditoría de TI |
 
 ### Integrantes del grupo original
 
@@ -54,14 +58,17 @@ El proyecto nace como una reconstrucción moderna de una experiencia académica 
 
 ## ✅ Estado actual
 
-**AuditCore v1.0.0** está funcionalmente cerrado para su alcance actual y se encuentra en una etapa de validación funcional y refinamiento posterior al cierre.
+**AuditCore v1.1.0 está finalizada y estable.**
 
 La plataforma incluye:
 
 - autenticación JWT con refresh tokens rotativos;
 - autorización RBAC basada en permisos;
+- matriz RBAC predeterminada para todos los roles del sistema;
 - aislamiento multiempresa por organización;
 - organizaciones, sucursales y departamentos;
+- asociación opcional de usuarios con organización, sucursal y departamento;
+- selectores dependientes Organización → Sucursal → Departamento;
 - usuarios, roles y permisos;
 - auditorías y ciclo de vida completo;
 - riesgos y tratamiento;
@@ -71,28 +78,47 @@ La plataforma incluye:
 - marcos, controles, preguntas, evaluaciones y respuestas;
 - Dashboard ejecutivo;
 - exportación de reportes CSV, Excel y PDF;
+- reportes PDF con wrapping y paginación dinámicos;
 - identidad visual propia integrada en frontend y reportes PDF;
 - navegación administrativa organizada por áreas funcionales;
 - CRUD administrativo con validaciones y manejo de relaciones;
-- generación automática de códigos de organización;
-- selectores de organización en los formularios administrativos para evitar el uso manual de GUID;
+- generación automática de códigos;
+- estados y severidades legibles en la interfaz;
+- interfaz responsive para escritorio, tablet y móvil;
+- accesibilidad alineada con NORTIC B2:2017 y WCAG 2.0;
+- navegación por teclado, foco visible y enlace para saltar al contenido principal;
+- soporte para `prefers-reduced-motion` y `forced-colors`;
 - health checks, rate limiting y manejo global de errores;
 - CI automatizado para backend, frontend, seguridad, contenedores y E2E;
 - Dockerfiles y Docker Compose para ejecución full stack;
 - pruebas E2E con Playwright sobre SQL Server y API reales.
 
-El backend mantiene **57 pruebas automatizadas** y la matriz de cierre de `v1.0.0` fue validada completamente en GitHub Actions.
+El backend mantiene **57 pruebas automatizadas**, y la matriz final de validación de `v1.1.0` quedó completamente verde en GitHub Actions.
 
-### Refinamientos posteriores a v1.0.0
+---
 
-Después del cierre funcional se inició una revisión manual del producto para mejorar su comportamiento como aplicación real y como proyecto de portafolio. Entre los ajustes ya incorporados se encuentran:
+## ♿ Accesibilidad y responsive
 
-- branding final de AuditCore en la aplicación y documentos PDF;
-- reorganización del sidebar para separar auditoría, cumplimiento y administración;
-- mejoras en operaciones CRUD y tratamiento de eliminaciones con dependencias;
-- sustitución de identificadores técnicos por selectores legibles de organizaciones;
-- generación automática del código de las organizaciones a partir de su nombre;
-- mejoras de consistencia visual y experiencia de usuario en formularios administrativos.
+AuditCore fue revisada para funcionar correctamente en escritorio, tablet y móvil, incluyendo resoluciones pequeñas y escenarios de zoom.
+
+La implementación de accesibilidad toma como referencia los lineamientos de **NORTIC B2:2017** y **WCAG 2.0**, especialmente los principios Perceptible, Operable, Comprensible y Robusto y criterios A/AA aplicables a la interfaz.
+
+Entre las medidas incorporadas se incluyen:
+
+- navegación completa mediante teclado;
+- foco de teclado claramente visible;
+- enlace “Saltar al contenido principal”;
+- estructura semántica con `nav`, `main` y etiquetas ARIA;
+- cierre del menú móvil mediante `Escape`;
+- iconos decorativos ocultos a tecnologías asistivas;
+- objetivos táctiles de al menos 44 px;
+- mejora de contraste y legibilidad;
+- formularios y acciones adaptables a pantallas pequeñas;
+- tablas con desplazamiento horizontal controlado;
+- soporte para reducción de movimiento;
+- compatibilidad con modos de alto contraste mediante `forced-colors`.
+
+> Esta implementación está alineada técnicamente con NORTIC B2:2017 / WCAG 2.0, pero no implica una certificación formal emitida por una entidad evaluadora.
 
 ---
 
@@ -195,6 +221,7 @@ AuditCore implementa:
 - access tokens JWT de corta duración;
 - refresh tokens rotativos;
 - políticas de autorización por permiso;
+- matriz RBAC para los roles `SUPER_ADMIN`, `ORGANIZATION_ADMIN`, `AUDIT_MANAGER`, `AUDITOR`, `AUDITEE`, `RISK_OWNER` y `VIEWER`;
 - aislamiento por organización;
 - validación de pertenencia multiempresa;
 - rate limiting para autenticación;
@@ -328,7 +355,7 @@ Dashboard
 Reporte CSV
 ```
 
-### Matriz CI de v1.0.0
+### Matriz CI final de v1.1.0
 
 | Pipeline | Estado |
 |---|---|
@@ -340,39 +367,12 @@ Reporte CSV
 
 ---
 
-## 🗺️ Roadmap de refinamiento
-
-El siguiente ciclo no plantea una reconstrucción de AuditCore. Su objetivo es consolidar la experiencia de uso y aumentar la cobertura funcional de la versión estable.
-
-### Prioridad alta
-
-- extender la generación automática de códigos a sucursales y departamentos;
-- permitir asociar usuarios con su sucursal y departamento dentro de la organización;
-- validar manualmente la matriz RBAC con los distintos perfiles del sistema;
-- completar un escenario funcional integral con datos de demostración;
-- revisar operaciones CRUD con relaciones dependientes y mensajes de error específicos.
-
-### Calidad y UX
-
-- homogeneizar validaciones, estados vacíos, loaders y mensajes de confirmación;
-- revisar selectores dependientes Organización → Sucursal → Departamento;
-- eliminar cualquier exposición innecesaria de identificadores GUID en la interfaz;
-- revisar la configuración HTTPS del entorno de desarrollo para evitar advertencias de redirección;
-- ampliar las pruebas E2E para cubrir los refinamientos administrativos.
-
-### Portafolio y demostración
-
-- incorporar un dataset de demostración reproducible mediante seeding;
-- preparar un escenario completo de auditoría que permita recorrer los módulos principales;
-- mantener documentación y capturas actualizadas a medida que avance el refinamiento.
-
----
-
 ## 📦 Versionado
 
-La primera versión estable corresponde a **v1.0.0**.
+- **v1.0.0** — cierre funcional inicial.
+- **v1.1.0** — cierre final con refinamientos administrativos, RBAC, responsive, accesibilidad y estabilización UX.
 
-Los cambios posteriores al cierre se están tratando como una etapa de refinamiento compatible con una futura **v1.1.0**, preservando la arquitectura y funcionalidades existentes.
+AuditCore se considera **finalizada** en su alcance actual y lista para demostración, portafolio y evolución futura si se decide continuar comercialmente.
 
 Consulta [`CHANGELOG.md`](./CHANGELOG.md) para ver el detalle funcional y técnico de cada versión.
 
