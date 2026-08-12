@@ -32,8 +32,13 @@ public sealed class ControlEvaluation : BaseAuditableEntity
     public void Evaluate(int? score, ComplianceStatus status, string? notes, Guid evaluatedByUserId)
     {
         if (evaluatedByUserId == Guid.Empty) throw new ArgumentException("El evaluador es obligatorio.", nameof(evaluatedByUserId));
-        if (status == ComplianceStatus.NotEvaluated) throw new ArgumentException("Debe indicar un estado de cumplimiento evaluado.", nameof(status));
-        if (status == ComplianceStatus.NotApplicable)
+
+        if (status == ComplianceStatus.NotEvaluated)
+        {
+            if (score is not null)
+                throw new ArgumentException("Una evaluación pendiente no puede tener puntuación.", nameof(score));
+        }
+        else if (status == ComplianceStatus.NotApplicable)
         {
             score = null;
         }
