@@ -158,7 +158,7 @@ public sealed class FrameworkService : IFrameworkService
 
     public async Task<AnswerDto> UpsertAnswerAsync(Guid evaluationId, Guid questionId, UpsertAnswerRequest request, CancellationToken cancellationToken = default)
     {
-        var evaluation = await _dbContext.ControlEvaluations.AsNoTracking().SingleOrDefaultAsync(x => x.Id == evaluationId, cancellationToken)
+        var evaluation = await _dbContext.ControlEvaluations.SingleOrDefaultAsync(x => x.Id == evaluationId, cancellationToken)
             ?? throw new InvalidOperationException("La evaluación no existe.");
         _tenantGuard.EnsureOrganization(await GetAuditOrganizationAsync(evaluation.AuditId, cancellationToken));
         var questionBelongs = await _dbContext.ControlQuestions.AnyAsync(x => x.Id == questionId && x.ControlId == evaluation.ControlId && x.IsActive, cancellationToken);
@@ -174,8 +174,66 @@ public sealed class FrameworkService : IFrameworkService
         {
             entity.Update(request.Score, request.Notes);
         }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await RecalculateEvaluationAsync(evaluation, cancellationToken);
         return new AnswerDto(entity.Id, entity.EvaluationId, entity.QuestionId, entity.Score, entity.Notes);
+    }
+
+    private async Task RecalculateEvaluationAsync(ControlEvaluation evaluation, CancellationToken cancellationToken)
+    {
+        if (!evaluation.EvaluatedByUserId.HasValue) return;
+
+        var questions = await _dbContext.ControlQuestions.AsNoTracking()
+            .Where(x => x.ControlId == evaluation.ControlId && x.IsActive)
+            .Select(x => new { x.Id, x.Weight, x.IsRequired })
+            .ToListAsync(cancellationToken);
+
+        if (questions.Count == 0) return;
+
+        var answers = await _dbContext.ControlAnswers.AsNoTracking()
+            .Where(x => x.EvaluationId == evaluation.Id)
+            .Select(x => new { x.QuestionId, x.Score })
+            .ToListAsync(cancellationToken);
+
+        var answerMap = answers.ToDictionary(x => x.QuestionId, x => x.Score);
+        var hasMissingRequired = questions
+            .Where(x => x.IsRequired)
+            .Any(x => !answerMap.TryGetValue(x.Id, out var score) || score is null);
+
+        if (hasMissingRequired)
+        {
+            evaluation.Evaluate(null, ComplianceStatus.NotEvaluated, evaluation.Notes, evaluation.EvaluatedByUserId.Value);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        var scoredQuestions = questions
+            .Where(x => answerMap.TryGetValue(x.Id, out var score) && score.HasValue)
+            .Select(x => new { x.Weight, Score = answerMap[x.Id]!.Value })
+            .ToArray();
+
+        if (scoredQuestions.Length == 0)
+        {
+            evaluation.Evaluate(null, ComplianceStatus.NotEvaluated, evaluation.Notes, evaluation.EvaluatedByUserId.Value);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        var totalWeight = scoredQuestions.Sum(x => x.Weight);
+        if (totalWeight <= 0) throw new InvalidOperationException("El peso total de las preguntas debe ser mayor que cero.");
+
+        var weightedScore = scoredQuestions.Sum(x => x.Score * x.Weight) / totalWeight;
+        var scoreValue = (int)Math.Round(weightedScore, MidpointRounding.AwayFromZero);
+        var status = scoreValue switch
+        {
+            >= 80 => ComplianceStatus.Compliant,
+            >= 50 => ComplianceStatus.PartiallyCompliant,
+            _ => ComplianceStatus.NonCompliant
+        };
+
+        evaluation.Evaluate(scoreValue, status, evaluation.Notes, evaluation.EvaluatedByUserId.Value);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<Guid> GetAuditOrganizationAsync(Guid auditId, CancellationToken cancellationToken)
