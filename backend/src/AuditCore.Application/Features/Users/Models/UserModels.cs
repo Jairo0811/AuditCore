@@ -4,6 +4,10 @@ public sealed record UserDto(
     Guid Id,
     Guid OrganizationId,
     string OrganizationName,
+    Guid? BranchId,
+    string? BranchName,
+    Guid? DepartmentId,
+    string? DepartmentName,
     string FirstName,
     string LastName,
     string FullName,
@@ -15,6 +19,8 @@ public sealed record UserDto(
 
 public sealed record CreateUserRequest(
     Guid OrganizationId,
+    Guid? BranchId,
+    Guid? DepartmentId,
     string FirstName,
     string LastName,
     string Email,
@@ -22,6 +28,8 @@ public sealed record CreateUserRequest(
     IReadOnlyCollection<Guid>? RoleIds);
 
 public sealed record UpdateUserRequest(
+    Guid? BranchId,
+    Guid? DepartmentId,
     string FirstName,
     string LastName,
     string Email);
