@@ -1,4 +1,4 @@
-﻿namespace AuditCore.Application.Features.Departments.Models;
+namespace AuditCore.Application.Features.Departments.Models;
 
 public sealed record DepartmentDto(
     Guid Id,
@@ -13,11 +13,9 @@ public sealed record DepartmentDto(
 public sealed record CreateDepartmentRequest(
     Guid OrganizationId,
     string Name,
-    string Code,
     Guid? BranchId);
 
 public sealed record UpdateDepartmentRequest(
     string Name,
-    string Code,
     Guid? BranchId,
     bool IsActive);
