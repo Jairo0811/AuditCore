@@ -37,6 +37,7 @@ export interface ResourceRowAction {
   confirm?: string;
   fields?: ResourceField[];
   submitLabel?: string;
+  isVisible?: (row: ResourceRecord) => boolean;
 }
 
 interface ResourceManagerProps {
@@ -51,6 +52,7 @@ interface ResourceManagerProps {
   mapUpdate?: (values: Record<string, string>, row: ResourceRecord) => unknown;
   allowDelete?: boolean;
   rowActions?: ResourceRowAction[];
+  canEdit?: (row: ResourceRecord) => boolean;
 }
 
 interface ProblemDetails {
@@ -105,6 +107,7 @@ export function ResourceManager({
   mapUpdate,
   allowDelete = false,
   rowActions = [],
+  canEdit = () => true,
 }: ResourceManagerProps) {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<"closed" | "create" | "edit">("closed");
@@ -125,7 +128,6 @@ export function ResourceManager({
   });
 
   const activeFields = mode === "edit" ? updateFields : createFields;
-
   const initialCreateValues = useMemo(() => initialValues(createFields), [createFields]);
 
   const saveMutation = useMutation({
@@ -345,22 +347,24 @@ export function ResourceManager({
                     {(updateFields.length > 0 || allowDelete || rowActions.length > 0) && (
                       <td>
                         <div className="row-actions">
-                          {updateFields.length > 0 && row.id && (
+                          {updateFields.length > 0 && row.id && canEdit(row) && (
                             <button type="button" className="icon-button" title="Editar" onClick={() => openEdit(row)}>
                               <Pencil size={15} />
                             </button>
                           )}
-                          {rowActions.map((action) => (
-                            <button
-                              key={action.label}
-                              type="button"
-                              className="text-action"
-                              disabled={actionMutation.isPending}
-                              onClick={() => triggerAction(row, action)}
-                            >
-                              {action.label}
-                            </button>
-                          ))}
+                          {rowActions
+                            .filter((action) => action.isVisible?.(row) ?? true)
+                            .map((action) => (
+                              <button
+                                key={action.label}
+                                type="button"
+                                className="text-action"
+                                disabled={actionMutation.isPending}
+                                onClick={() => triggerAction(row, action)}
+                              >
+                                {action.label}
+                              </button>
+                            ))}
                           {allowDelete && row.id && (
                             <button
                               type="button"

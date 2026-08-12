@@ -1,4 +1,5 @@
 import { ResourceManager } from "../../../components/ResourceManager";
+import { actionPlanStatusLabels, labelFromMap } from "../../../lib/domainLabels";
 import { useLookupOptions } from "../../../hooks/useLookupOptions";
 
 interface FindingLookup {
@@ -12,6 +13,8 @@ interface UserLookup {
   fullName: string;
   email: string;
 }
+
+const isActionablePlan = (status: unknown) => [1, 2, 4].includes(Number(status));
 
 export function ActionPlansPage() {
   const findings = useLookupOptions<FindingLookup>(
@@ -32,13 +35,14 @@ export function ActionPlansPage() {
       description="Gestiona responsables, fechas compromiso, avance, vencimientos y cierre de acciones correctivas."
       endpoint="/action-plans"
       queryKey="action-plans"
+      canEdit={(row) => isActionablePlan(row.status)}
       columns={[
         { key: "findingCode", label: "Hallazgo" },
         { key: "title", label: "Plan" },
         { key: "responsibleName", label: "Responsable" },
         { key: "dueDateUtc", label: "Fecha límite", render: (value) => typeof value === "string" ? new Date(value).toLocaleDateString() : "—" },
         { key: "progressPercent", label: "Avance", render: (value) => `${String(value ?? 0)}%` },
-        { key: "status", label: "Estado" },
+        { key: "status", label: "Estado", render: (value) => labelFromMap(value, actionPlanStatusLabels) },
       ]}
       createFields={[
         {
@@ -78,6 +82,7 @@ export function ActionPlansPage() {
         {
           label: "Progreso",
           endpoint: (row) => `/action-plans/${row.id}/progress`,
+          isVisible: (row) => isActionablePlan(row.status),
           fields: [
             { name: "progressPercent", label: "Nuevo progreso (%)", type: "number", min: 0, max: 100, required: true, defaultValue: 50 },
           ],
@@ -87,13 +92,19 @@ export function ActionPlansPage() {
         {
           label: "Completar",
           endpoint: (row) => `/action-plans/${row.id}/complete`,
+          isVisible: (row) => isActionablePlan(row.status),
           fields: [
             { name: "notes", label: "Notas de finalización", type: "textarea", placeholder: "Describe el resultado final de la acción." },
           ],
           submitLabel: "Completar plan",
           body: (_row, values) => ({ notes: values.notes || null }),
         },
-        { label: "Cancelar", endpoint: (row) => `/action-plans/${row.id}/cancel`, confirm: "¿Cancelar este plan de acción?" },
+        {
+          label: "Cancelar",
+          endpoint: (row) => `/action-plans/${row.id}/cancel`,
+          isVisible: (row) => isActionablePlan(row.status),
+          confirm: "¿Cancelar este plan de acción?",
+        },
       ]}
     />
   );

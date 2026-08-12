@@ -1,4 +1,5 @@
 import { ResourceManager } from "../../../components/ResourceManager";
+import { labelFromMap, riskLevelLabels, riskStatusLabels } from "../../../lib/domainLabels";
 import { useLookupOptions } from "../../../hooks/useLookupOptions";
 
 interface AuditLookup {
@@ -37,9 +38,9 @@ export function RisksPage() {
         { key: "auditCode", label: "Auditoría" },
         { key: "title", label: "Riesgo" },
         { key: "score", label: "Puntuación" },
-        { key: "level", label: "Nivel" },
+        { key: "level", label: "Nivel", render: (value) => labelFromMap(value, riskLevelLabels) },
         { key: "ownerName", label: "Responsable" },
-        { key: "status", label: "Estado" },
+        { key: "status", label: "Estado", render: (value) => labelFromMap(value, riskStatusLabels) },
       ]}
       createFields={[
         {

@@ -1,4 +1,5 @@
 import { ResourceManager } from "../../../components/ResourceManager";
+import { findingSeverityLabels, findingStatusLabels, labelFromMap } from "../../../lib/domainLabels";
 import { useLookupOptions } from "../../../hooks/useLookupOptions";
 
 interface AuditLookup {
@@ -82,10 +83,10 @@ export function FindingsPage() {
         { key: "code", label: "Código" },
         { key: "auditCode", label: "Auditoría" },
         { key: "title", label: "Hallazgo" },
-        { key: "severity", label: "Severidad" },
+        { key: "severity", label: "Severidad", render: (value) => labelFromMap(value, findingSeverityLabels) },
         { key: "responsibleName", label: "Responsable" },
         { key: "dueDateUtc", label: "Vence", render: (value) => typeof value === "string" ? new Date(value).toLocaleDateString() : "—" },
-        { key: "status", label: "Estado" },
+        { key: "status", label: "Estado", render: (value) => labelFromMap(value, findingStatusLabels) },
       ]}
       createFields={[
         {
