@@ -41,22 +41,9 @@ public sealed class UserConfiguration
         })
             .IsUnique();
 
-        builder.HasIndex(x => x.BranchId);
-        builder.HasIndex(x => x.DepartmentId);
-
         builder.HasOne(x => x.Organization)
             .WithMany()
             .HasForeignKey(x => x.OrganizationId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Branch)
-            .WithMany()
-            .HasForeignKey(x => x.BranchId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Department)
-            .WithMany()
-            .HasForeignKey(x => x.DepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
