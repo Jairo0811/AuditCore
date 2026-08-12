@@ -1,4 +1,4 @@
-﻿using AuditCore.Domain.Entities;
+using AuditCore.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,7 +29,7 @@ public sealed class AuditCoreSeeder
     {
         await SeedRolesAsync(cancellationToken);
         await SeedPermissionsAsync(cancellationToken);
-        await SeedSuperAdminPermissionsAsync(cancellationToken);
+        await SeedRolePermissionsAsync(cancellationToken);
 
         var organization =
             await SeedOrganizationAsync(cancellationToken);
@@ -88,39 +88,55 @@ public sealed class AuditCoreSeeder
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task SeedSuperAdminPermissionsAsync(
+    private async Task SeedRolePermissionsAsync(
         CancellationToken cancellationToken)
     {
-        var superAdminRole = await _dbContext.Roles
-            .SingleAsync(
-                role => role.Code == DefaultRoles.SuperAdmin,
-                cancellationToken);
+        var roles = await _dbContext.Roles
+            .IgnoreQueryFilters()
+            .Where(role => DefaultRolePermissions.Matrix.Keys.Contains(role.Code))
+            .ToDictionaryAsync(role => role.Code, cancellationToken);
+
+        var permissionCodes = DefaultRolePermissions.Matrix.Values
+            .SelectMany(codes => codes)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
         var permissions = await _dbContext.Permissions
-            .Where(permission =>
-                DefaultPermissions.SuperAdmin.Contains(
-                    permission.Code))
+            .IgnoreQueryFilters()
+            .Where(permission => permissionCodes.Contains(permission.Code))
+            .ToDictionaryAsync(permission => permission.Code, cancellationToken);
+
+        var existingAssignments = await _dbContext.RolePermissions
+            .Select(item => new { item.RoleId, item.PermissionId })
             .ToListAsync(cancellationToken);
 
-        var existingPermissionIds =
-            await _dbContext.RolePermissions
-                .Where(item =>
-                    item.RoleId == superAdminRole.Id)
-                .Select(item => item.PermissionId)
-                .ToListAsync(cancellationToken);
+        var existing = existingAssignments
+            .Select(item => (item.RoleId, item.PermissionId))
+            .ToHashSet();
 
-        foreach (var permission in permissions)
+        foreach (var (roleCode, requiredPermissionCodes) in DefaultRolePermissions.Matrix)
         {
-            if (existingPermissionIds.Contains(
-                    permission.Id))
+            if (!roles.TryGetValue(roleCode, out var role))
             {
                 continue;
             }
 
-            _dbContext.RolePermissions.Add(
-                new RolePermission(
-                    superAdminRole.Id,
-                    permission.Id));
+            foreach (var permissionCode in requiredPermissionCodes)
+            {
+                if (!permissions.TryGetValue(permissionCode, out var permission))
+                {
+                    throw new InvalidOperationException(
+                        $"El permiso requerido '{permissionCode}' no está registrado.");
+                }
+
+                if (existing.Contains((role.Id, permission.Id)))
+                {
+                    continue;
+                }
+
+                _dbContext.RolePermissions.Add(
+                    new RolePermission(role.Id, permission.Id));
+            }
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
