@@ -20,6 +20,37 @@ interface UserLookup {
   email: string;
 }
 
+function mapCreateFinding(values: Record<string, string>) {
+  return {
+    auditId: values.auditId,
+    riskId: values.riskId || null,
+    title: values.title,
+    condition: values.condition,
+    criteria: values.criteria,
+    cause: values.cause || null,
+    effect: values.effect || null,
+    recommendation: values.recommendation || null,
+    severity: Number(values.severity),
+    responsibleUserId: values.responsibleUserId || null,
+    dueDateUtc: values.dueDateUtc ? new Date(values.dueDateUtc).toISOString() : null,
+  };
+}
+
+function mapUpdateFinding(values: Record<string, string>) {
+  return {
+    riskId: values.riskId || null,
+    title: values.title,
+    condition: values.condition,
+    criteria: values.criteria,
+    cause: values.cause || null,
+    effect: values.effect || null,
+    recommendation: values.recommendation || null,
+    severity: Number(values.severity),
+    responsibleUserId: values.responsibleUserId || null,
+    dueDateUtc: values.dueDateUtc ? new Date(values.dueDateUtc).toISOString() : null,
+  };
+}
+
 export function FindingsPage() {
   const audits = useLookupOptions<AuditLookup>(
     "audits",
@@ -45,6 +76,8 @@ export function FindingsPage() {
       description="Documenta condiciones, criterios, causas, efectos, recomendaciones y seguimiento. El código se genera automáticamente."
       endpoint="/findings"
       queryKey="findings"
+      mapCreate={mapCreateFinding}
+      mapUpdate={mapUpdateFinding}
       columns={[
         { key: "code", label: "Código" },
         { key: "auditCode", label: "Auditoría" },
