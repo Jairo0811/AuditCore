@@ -4,6 +4,62 @@ Todos los cambios relevantes de AuditCore se documentan en este archivo.
 
 El proyecto sigue versionado semántico (`MAJOR.MINOR.PATCH`).
 
+## [1.1.0] - 2026-08-12
+
+### Añadido
+
+- Asociación opcional de usuarios con sucursal y departamento dentro de su organización.
+- Selectores dependientes Organización → Sucursal → Departamento en administración de usuarios.
+- Matriz RBAC predeterminada para todos los roles del sistema.
+- Seeding aditivo de permisos por rol.
+- Nuevas validaciones de consistencia entre organización, sucursal y departamento.
+- Navegación responsive reforzada para escritorio, tablet y móvil.
+- Menú móvil accesible con cierre mediante `Escape`.
+- Enlace “Saltar al contenido principal”.
+- Estructura semántica con `main`, navegación etiquetada y mejoras ARIA.
+- Objetivos táctiles de al menos 44 px.
+- Soporte para `prefers-reduced-motion` y `forced-colors`.
+- Ajustes de contraste, legibilidad y foco visible.
+
+### Mejorado
+
+- Estados y severidades presentados con nombres legibles en la interfaz.
+- Acciones disponibles según el estado real de auditorías y planes de acción.
+- Módulo de Marcos y controles reorganizado para evitar separación excesiva entre secciones.
+- Evaluaciones con mejor flujo de preguntas y registro de cumplimiento.
+- Reportes PDF con wrapping real, altura dinámica de filas y paginación por espacio disponible.
+- Formularios administrativos con menor exposición de GUID y mayor consistencia UX.
+- Tablas y formularios adaptados a resoluciones pequeñas y escenarios de zoom.
+
+### Accesibilidad
+
+- Implementación técnica alineada con lineamientos de NORTIC B2:2017 y WCAG 2.0.
+- Navegación completa mediante teclado.
+- Foco claramente visible.
+- Mecanismo para evitar bloques repetitivos.
+- Mejora de contraste y legibilidad.
+- Soporte para reducción de movimiento y modos de alto contraste.
+
+> La alineación con NORTIC B2 no constituye una certificación formal.
+
+### Calidad
+
+- Backend CI en verde.
+- Frontend CI en verde.
+- E2E CI en verde.
+- Security CI en verde.
+- Container CI en verde.
+- 57 pruebas automatizadas de backend validadas.
+
+### Documentación
+
+- README actualizado al estado final de v1.1.0.
+- Contexto académico aclarado: Auditoría Informática fue una materia teórica.
+- Se documenta que AuditCore no fue el proyecto final original de la asignatura, sino una evolución posterior basada en la exposición grupal y en los conceptos trabajados durante la materia.
+- Estado del proyecto actualizado a finalizado y estable.
+
+---
+
 ## [1.0.0] - 2026-08-11
 
 ### Añadido
@@ -72,4 +128,4 @@ El proyecto sigue versionado semántico (`MAJOR.MINOR.PATCH`).
 
 ## Antecedentes
 
-AuditCore surge como reconstrucción y evolución profesional de un trabajo académico asociado a **Auditoría Informática (SOF-009)** del Instituto Tecnológico de Las Américas (ITLA), período **2017-C2**.
+AuditCore surge como evolución profesional posterior a la asignatura **Auditoría Informática (SOF-009)** del Instituto Tecnológico de Las Américas (ITLA), período **2017-C2**. La asignatura fue de naturaleza teórica; la plataforma se desarrolló posteriormente tomando como base conceptual la exposición realizada por el grupo y los temas estudiados durante la materia.
