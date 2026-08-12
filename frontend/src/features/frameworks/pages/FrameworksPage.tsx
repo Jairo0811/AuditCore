@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { ResourceManager } from "../../../components/ResourceManager";
 import { useLookupOptions } from "../../../hooks/useLookupOptions";
@@ -10,6 +11,7 @@ interface FrameworkLookup {
 }
 
 export function FrameworksPage() {
+  const queryClient = useQueryClient();
   const frameworks = useLookupOptions<FrameworkLookup>(
     "frameworks",
     "/frameworks",
@@ -21,9 +23,11 @@ export function FrameworksPage() {
     { label: "Inactivo", value: "false" },
   ];
 
-  function refreshWorkspace() {
-    window.dispatchEvent(new Event("auditcore:refresh-frameworks"));
-    window.location.reload();
+  async function refreshWorkspace() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["frameworks"] }),
+      queryClient.invalidateQueries({ queryKey: ["framework-controls"] }),
+    ]);
   }
 
   return (
