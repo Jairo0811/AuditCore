@@ -12,7 +12,10 @@ namespace AuditCore.Infrastructure.Services;
 public sealed class UserService : IUserService
 {
     private static readonly Expression<Func<User, UserDto>> Projection = x => new UserDto(
-        x.Id, x.OrganizationId, x.Organization.Name, x.FirstName, x.LastName,
+        x.Id, x.OrganizationId, x.Organization.Name,
+        x.BranchId, x.Branch != null ? x.Branch.Name : null,
+        x.DepartmentId, x.Department != null ? x.Department.Name : null,
+        x.FirstName, x.LastName,
         x.FirstName + " " + x.LastName, x.Email, x.IsActive, x.IsLocked, x.LastLoginAtUtc,
         x.UserRoles.Select(ur => ur.Role.Code).OrderBy(code => code).ToArray());
 
@@ -54,12 +57,15 @@ public sealed class UserService : IUserService
         _tenantGuard.EnsureOrganization(request.OrganizationId);
         if (!await _dbContext.Organizations.AnyAsync(x => x.Id == request.OrganizationId, cancellationToken))
             throw new InvalidOperationException("La organización indicada no existe.");
+
+        await ValidateStructureAsync(request.OrganizationId, request.BranchId, request.DepartmentId, cancellationToken);
+
         var email = NormalizeEmail(request.Email);
         if (await _dbContext.Users.AnyAsync(x => x.OrganizationId == request.OrganizationId && x.Email == email, cancellationToken))
             throw new InvalidOperationException("Ya existe un usuario con este correo en la organización.");
         await ValidateRoleAssignmentAsync(request.RoleIds ?? [], cancellationToken);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
-        var user = new User(request.OrganizationId, request.FirstName, request.LastName, email, "TEMPORARY_HASH");
+        var user = new User(request.OrganizationId, request.FirstName, request.LastName, email, "TEMPORARY_HASH", request.BranchId, request.DepartmentId);
         user.ChangePassword(_passwordHasher.HashPassword(user, request.Password));
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -72,10 +78,13 @@ public sealed class UserService : IUserService
         var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (user is null) return null;
         _tenantGuard.EnsureOrganization(user.OrganizationId);
+        await ValidateStructureAsync(user.OrganizationId, request.BranchId, request.DepartmentId, cancellationToken);
+
         var email = NormalizeEmail(request.Email);
         if (await _dbContext.Users.AnyAsync(x => x.Id != id && x.OrganizationId == user.OrganizationId && x.Email == email, cancellationToken))
             throw new InvalidOperationException("Ya existe otro usuario con este correo en la organización.");
         user.UpdateProfile(request.FirstName, request.LastName, email);
+        user.AssignStructure(request.BranchId, request.DepartmentId);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return await GetByIdAsync(id, cancellationToken);
     }
@@ -122,6 +131,26 @@ public sealed class UserService : IUserService
         var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (user is not null) _tenantGuard.EnsureOrganization(user.OrganizationId);
         return user;
+    }
+
+    private async Task ValidateStructureAsync(Guid organizationId, Guid? branchId, Guid? departmentId, CancellationToken cancellationToken)
+    {
+        if (branchId.HasValue)
+        {
+            var branch = await _dbContext.Branches.AsNoTracking().SingleOrDefaultAsync(x => x.Id == branchId.Value, cancellationToken)
+                ?? throw new InvalidOperationException("La sucursal indicada no existe.");
+            if (branch.OrganizationId != organizationId || !branch.IsActive)
+                throw new InvalidOperationException("La sucursal debe pertenecer a la organización y estar activa.");
+        }
+
+        if (!departmentId.HasValue) return;
+
+        var department = await _dbContext.Departments.AsNoTracking().SingleOrDefaultAsync(x => x.Id == departmentId.Value, cancellationToken)
+            ?? throw new InvalidOperationException("El departamento indicado no existe.");
+        if (department.OrganizationId != organizationId || !department.IsActive)
+            throw new InvalidOperationException("El departamento debe pertenecer a la organización y estar activo.");
+        if (branchId.HasValue && department.BranchId.HasValue && department.BranchId != branchId)
+            throw new InvalidOperationException("El departamento seleccionado no pertenece a la sucursal indicada.");
     }
 
     private async Task ValidateRoleAssignmentAsync(IReadOnlyCollection<Guid> roleIds, CancellationToken cancellationToken)
