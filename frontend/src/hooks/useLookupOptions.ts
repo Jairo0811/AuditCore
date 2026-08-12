@@ -13,7 +13,7 @@ export function useLookupOptions<T extends { id: string }>(
   enabled = true,
 ) {
   const query = useQuery({
-    queryKey: ["lookup", queryKey],
+    queryKey: [queryKey],
     enabled,
     queryFn: async () => (await apiClient.get<T[]>(endpoint)).data,
   });
