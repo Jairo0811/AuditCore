@@ -7,11 +7,15 @@
   <img src="https://img.shields.io/badge/ITLA-2017--C2-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
 </p>
 
+<p align="center">
+<img src="https://img.shields.io/badge/Estado-v1.1.0%20finalizada-22C55E?style=for-the-badge" alt="Estado v1.1.0 finalizada" />
+</p>
+
 
 <br/><br/>
 
 
-<img src="https://img.shields.io/badge/Estado-v1.1.0%20finalizada-22C55E?style=for-the-badge" alt="Estado v1.1.0 finalizada" />
+
 <img src="https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt="ASP.NET Core 10" />
 <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220" alt="React 19" />
 <img src="https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6" />
