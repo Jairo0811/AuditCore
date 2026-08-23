@@ -2,7 +2,6 @@
 
 <img src="./docs/images/auditcore-logo.png" alt="Logo de AuditCore" width="520" />
 
-
 <p align="center">
   <img src="https://img.shields.io/badge/ITLA-2017--C2-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
 </p>
@@ -11,10 +10,7 @@
 <img src="https://img.shields.io/badge/Estado-v1.1.0%20finalizada-22C55E?style=for-the-badge" alt="Estado v1.1.0 finalizada" />
 </p>
 
-
 <br/><br/>
-
-
 
 <img src="https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt="ASP.NET Core 10" />
 <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1220" alt="React 19" />
@@ -286,11 +282,34 @@ npm ci
 npm run dev
 ```
 
-Vite expone normalmente la aplicación en:
+Vite expone la aplicación localmente y también en la red:
 
 ```text
 http://localhost:5173
+http://<IP-DE-LA-PC>:5173
 ```
+
+### 📱 Acceso desde un móvil en la red local
+
+El frontend escucha en `0.0.0.0:5173` y usa un proxy de Vite para enviar `/api` a la API local en `127.0.0.1:5047`; por eso el móvil no necesita conocer el puerto del backend.
+
+Con ambas máquinas en la misma red:
+
+1. Levanta backend y frontend.
+2. Obtén la IPv4 de la PC con `ipconfig`.
+3. Abre en el teléfono:
+
+```text
+http://<IP-DE-LA-PC>:5173
+```
+
+Ejemplo:
+
+```text
+http://192.168.1.50:5173
+```
+
+Si Windows solicita acceso de firewall para Node.js, permite únicamente redes privadas.
 
 ### 🔑 Acceso local de desarrollo
 
