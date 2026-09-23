@@ -3,7 +3,7 @@
 <img src="./docs/images/auditcore-logo.png" alt="Logo de AuditCore" width="520" />
 
 <p align="center">
-  <img src="https://img.shields.io/badge/ITLA-2017--C2-0057B8?style=for-the-badge" alt="ITLA 2017-C2" />
+  <img src="https://img.shields.io/badge/ITLA-SOF--009-0057B8?style=for-the-badge" alt="ITLA SOF-009" />
 </p>
 
 <p align="center">
@@ -18,7 +18,8 @@
 <img src="https://img.shields.io/badge/SQL_Server-2025-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white" alt="SQL Server 2025" />
 <img src="https://img.shields.io/badge/E2E-Playwright-2EAD33?style=for-the-badge&logo=playwright" alt="Playwright E2E" />
 <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready" />
-<img src="https://img.shields.io/badge/CI-Passing-22C55E?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI Passing" />
+<a href="https://github.com/Jairo0811/AuditCore/actions/workflows/backend-ci.yml"><img src="https://github.com/Jairo0811/AuditCore/actions/workflows/backend-ci.yml/badge.svg" alt="Backend CI" /></a>
+<a href="https://github.com/Jairo0811/AuditCore/actions/workflows/frontend-ci.yml"><img src="https://github.com/Jairo0811/AuditCore/actions/workflows/frontend-ci.yml/badge.svg" alt="Frontend CI" /></a>
 <img src="https://img.shields.io/badge/Accesibilidad-NORTIC%20B2%20%2F%20WCAG%202.0-0EA5E9?style=for-the-badge" alt="Accesibilidad alineada con NORTIC B2 y WCAG 2.0" />
 
 <br/><br/>
@@ -37,7 +38,7 @@ El proyecto surge como una evolución profesional posterior a la asignatura **Au
 
 A partir de esa exposición se desarrolló una plataforma real alrededor de los conceptos trabajados en clase: auditoría de TI, controles, riesgos, hallazgos, evidencias, planes de acción, cumplimiento, trazabilidad y administración organizacional.
 
-## 🎓 Contexto académico
+## 🎓 Información académica
 
 | Dato | Información |
 |---|---|
@@ -49,16 +50,16 @@ A partir de esa exposición se desarrolló una plataforma real alrededor de los 
 | 🧩 Base conceptual | Exposición grupal de la asignatura, COBIT y administración de datos |
 | 🛠️ Evolución posterior | Conversión de los contenidos académicos en una plataforma profesional de auditoría de TI |
 
-### Integrantes del grupo original
+### 👥 Equipo académico original
 
-| Nombre | Matrícula |
+| 👤 Integrante | 🆔 Matrícula |
 |---|---|
-| Sianya Jesuína Castillo Perez | 2015-2734 |
-| Sinver Vladimir Aguiló Flores | 2015-2872 |
-| Leidy Jireth Medina Oleaga | 2015-2942 |
-| Francis Jairo Matías Rosario | 2015-2984 |
-| Pedro Arturo de León Parra | 2015-3018 |
-| Yeidy Khris Utate | 2015-3143 |
+| 👩🏻‍💻 Sianya Jesuína Castillo Perez | 2015-2734 |
+| 👨🏻‍💻 Sinver Vladimir Aguiló Flores | 2015-2872 |
+| 👩🏻‍💻 Leidy Jireth Medina Oleaga | 2015-2942 |
+| 👨🏻‍💻 Francis Jairo Matías Rosario | 2015-2984 |
+| 👨🏻‍💻 Pedro Arturo de León Parra | 2015-3018 |
+| 👩🏻‍💻 Yeidy Khris Utate | 2015-3143 |
 
 ## 🧭 Continuidad académica
 
@@ -66,10 +67,10 @@ A partir de esa exposición se desarrolló una plataforma real alrededor de los 
 
 La primera coincidencia ocurrió en **2017-C2** durante **Auditoría Informática (SOF-009)**, asignatura que posteriormente sirvió como base conceptual para AuditCore. En el período siguiente, **2017-C3**, **Pedro Arturo de León Parra (2015-3018)** volvió a coincidir con Francis Jairo Matías Rosario en **Introducción a la Ingeniería en Software (SOF-015)**, cuyos contenidos inspiraron posteriormente IngSoft Studio.
 
-| Orden | Código | Asignatura | Proyecto | Período | Compañero recurrente |
-|---:|---|---|---|---|---|
-| 1 | SOF-009 | Auditoría Informática | **AuditCore** | 2017-C2 | **Pedro Arturo de León Parra — 2015-3018** |
-| 2 | SOF-015 | Introducción a la Ingeniería en Software | [**IngSoft Studio**](https://github.com/Jairo0811/IngSoft-Studio) | 2017-C3 | **Pedro Arturo de León Parra — 2015-3018** |
+| Orden | Asignatura | Proyecto | Período |
+|---:|---|---|---|
+| 1 | Auditoría Informática (SOF-009) | **AuditCore** | 2017-C2 |
+| 2 | Introducción a la Ingeniería en Software (SOF-015) | [**IngSoft Studio**](https://github.com/Jairo0811/IngSoft-Studio) | 2017-C3 |
 
 Vistos en conjunto, ambos proyectos documentan una continuidad real entre compañeros a lo largo de dos períodos académicos consecutivos y muestran una progresión conceptual desde **auditoría, controles y cumplimiento** hacia **ingeniería de software, calidad y ciclo de vida del desarrollo**. Cada repositorio conserva su identidad académica original y su implementación profesional posterior.
 
@@ -141,7 +142,7 @@ Entre las medidas incorporadas se incluyen:
 
 ---
 
-## 🛠️ Stack tecnológico
+## 🧱 Stack tecnológico
 
 ### Backend
 
