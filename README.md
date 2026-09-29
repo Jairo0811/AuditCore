@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/images/auditcore-logo.png" alt="Logo de AuditCore" width="520" />
+<img src="./docs/images/auditcore-logo.png" alt="Logo de AuditCore" width="720" />
 
 <p align="center">
   <img src="https://img.shields.io/badge/ITLA-SOF--009-0057B8?style=for-the-badge" alt="ITLA SOF-009" />
