@@ -35,21 +35,23 @@ public sealed class EvidenceController : ControllerBase
     }
 
     [HttpPost]
-    [RequestSizeLimit(20 * 1024 * 1024)]
+    [RequestSizeLimit(20 * 1024 * 1024 + 64 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 20 * 1024 * 1024 + 64 * 1024)]
     [Authorize(Policy = PermissionCodes.EvidenceManage)]
     public async Task<ActionResult<EvidenceDto>> Create(
         [FromForm] Guid auditId,
         [FromForm] Guid? findingId,
         [FromForm] string? description,
-        [FromForm] Guid? uploadedByUserId,
         IFormFile file,
         CancellationToken cancellationToken)
     {
+        // La autoría (UploadedByUserId) se toma del usuario autenticado. Un campo uploadedByUserId enviado
+        // por clientes antiguos se ignora para impedir atribuir la carga a otro usuario.
         if (file.Length <= 0) return BadRequest("El archivo está vacío.");
         await using var stream = file.OpenReadStream();
         using var memory = new MemoryStream();
         await stream.CopyToAsync(memory, cancellationToken);
-        var result = await _service.CreateAsync(new CreateEvidenceRequest(auditId, findingId, file.FileName, file.ContentType, memory.ToArray(), description, uploadedByUserId), cancellationToken);
+        var result = await _service.CreateAsync(new CreateEvidenceRequest(auditId, findingId, file.FileName, file.ContentType, memory.ToArray(), description), cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 

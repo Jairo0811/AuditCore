@@ -17,6 +17,12 @@ public sealed record UserDto(
     DateTime? LastLoginAtUtc,
     IReadOnlyCollection<string> Roles);
 
+public sealed record UserLookupDto(
+    Guid Id,
+    Guid OrganizationId,
+    string FullName,
+    string Email);
+
 public sealed record CreateUserRequest(
     Guid OrganizationId,
     Guid? BranchId,

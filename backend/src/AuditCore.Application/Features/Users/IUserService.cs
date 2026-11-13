@@ -1,10 +1,14 @@
-﻿using AuditCore.Application.Features.Users.Models;
+using AuditCore.Application.Features.Users.Models;
 
 namespace AuditCore.Application.Features.Users;
 
 public interface IUserService
 {
     Task<IReadOnlyCollection<UserDto>> GetAllAsync(
+        Guid? organizationId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<UserLookupDto>> GetLookupAsync(
         Guid? organizationId = null,
         CancellationToken cancellationToken = default);
 
