@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using AuditCore.Application.Common.Interfaces;
+using AuditCore.Application.Common.Security;
 using AuditCore.Application.Features.Evidence;
 using AuditCore.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -9,31 +10,26 @@ namespace AuditCore.Infrastructure.Services;
 
 public sealed class EvidenceService : IEvidenceService
 {
-    private const long MaxFileSizeBytes = 20 * 1024 * 1024;
-    private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "application/pdf", "image/png", "image/jpeg", "text/plain", "text/csv",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    };
+    public const long MaxFileSizeBytes = 20 * 1024 * 1024;
 
     private readonly IAuditCoreDbContext _dbContext;
     private readonly TenantGuard _tenantGuard;
+    private readonly ICurrentUserContext _currentUser;
     private readonly string _storageRoot;
 
-    public EvidenceService(IAuditCoreDbContext dbContext, TenantGuard tenantGuard, IConfiguration configuration)
+    public EvidenceService(IAuditCoreDbContext dbContext, TenantGuard tenantGuard, ICurrentUserContext currentUser, IConfiguration configuration)
     {
         _dbContext = dbContext;
         _tenantGuard = tenantGuard;
-        _storageRoot = Path.GetFullPath(configuration["EvidenceStorage:Path"] ?? Path.Combine(AppContext.BaseDirectory, "evidence-storage"));
+        _currentUser = currentUser;
+        _storageRoot = Path.TrimEndingDirectorySeparator(
+            Path.GetFullPath(configuration["EvidenceStorage:Path"] ?? Path.Combine(AppContext.BaseDirectory, "evidence-storage")));
         Directory.CreateDirectory(_storageRoot);
     }
 
     public async Task<IReadOnlyCollection<EvidenceDto>> GetAllAsync(Guid? auditId = null, Guid? findingId = null, CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.Evidences.AsNoTracking().AsQueryable();
-        var restricted = _tenantGuard.RestrictedOrganizationId;
-        if (restricted.HasValue) query = query.Where(x => x.Audit.OrganizationId == restricted.Value);
+        var query = VisibleEvidence();
         if (auditId.HasValue) query = query.Where(x => x.AuditId == auditId.Value);
         if (findingId.HasValue) query = query.Where(x => x.FindingId == findingId.Value);
         return await query.OrderByDescending(x => x.CreatedAtUtc)
@@ -43,10 +39,8 @@ public sealed class EvidenceService : IEvidenceService
 
     public async Task<EvidenceDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.Evidences.AsNoTracking().Where(x => x.Id == id);
-        var restricted = _tenantGuard.RestrictedOrganizationId;
-        if (restricted.HasValue) query = query.Where(x => x.Audit.OrganizationId == restricted.Value);
-        return await query.Select(x => new EvidenceDto(x.Id, x.AuditId, x.FindingId, x.FileName, x.ContentType, x.SizeBytes, x.Sha256, x.Description, x.UploadedByUserId, x.CreatedAtUtc))
+        return await VisibleEvidence().Where(x => x.Id == id)
+            .Select(x => new EvidenceDto(x.Id, x.AuditId, x.FindingId, x.FileName, x.ContentType, x.SizeBytes, x.Sha256, x.Description, x.UploadedByUserId, x.CreatedAtUtc))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
@@ -54,8 +48,12 @@ public sealed class EvidenceService : IEvidenceService
     {
         if (request.Content.Length == 0 || request.Content.LongLength > MaxFileSizeBytes)
             throw new InvalidOperationException("La evidencia debe tener entre 1 byte y 20 MB.");
-        if (!AllowedContentTypes.Contains(request.ContentType))
-            throw new InvalidOperationException("El tipo de archivo no está permitido.");
+
+        var safeName = Path.GetFileName((request.FileName ?? string.Empty).Replace('\\', '/')).Trim();
+        if (string.IsNullOrWhiteSpace(safeName) || safeName.Length > 255)
+            throw new InvalidOperationException("El nombre de archivo no es válido.");
+
+        var contentType = EvidenceFileRules.ResolveContentType(safeName, request.ContentType, request.Content);
 
         var audit = await _dbContext.Audits.AsNoTracking().SingleOrDefaultAsync(x => x.Id == request.AuditId, cancellationToken)
             ?? throw new InvalidOperationException("La auditoría indicada no existe.");
@@ -67,16 +65,12 @@ public sealed class EvidenceService : IEvidenceService
             if (!belongs) throw new InvalidOperationException("El hallazgo no pertenece a la auditoría indicada.");
         }
 
-        if (request.UploadedByUserId.HasValue)
-        {
-            var validUser = await _dbContext.Users.AsNoTracking().AnyAsync(x => x.Id == request.UploadedByUserId.Value && x.OrganizationId == audit.OrganizationId && x.IsActive && !x.IsLocked, cancellationToken);
-            if (!validUser) throw new InvalidOperationException("El usuario que carga la evidencia no es válido para esta organización.");
-        }
+        // La autoría siempre corresponde al actor autenticado; el cliente no puede atribuirla a otro usuario.
+        var uploadedByUserId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException("No fue posible identificar al usuario que carga la evidencia.");
 
-        var safeName = Path.GetFileName(request.FileName);
-        if (string.IsNullOrWhiteSpace(safeName)) throw new InvalidOperationException("El nombre de archivo no es válido.");
         var hash = Convert.ToHexString(SHA256.HashData(request.Content));
-        var extension = Path.GetExtension(safeName);
+        var extension = Path.GetExtension(safeName).ToLowerInvariant();
         var storageKey = $"{request.AuditId:N}/{Guid.NewGuid():N}{extension}";
         var fullPath = GetSafePath(storageKey);
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
@@ -84,7 +78,7 @@ public sealed class EvidenceService : IEvidenceService
 
         try
         {
-            var evidence = new Evidence(request.AuditId, safeName, request.ContentType, request.Content.LongLength, storageKey, hash, request.Description, request.FindingId, request.UploadedByUserId);
+            var evidence = new Evidence(request.AuditId, safeName, contentType, request.Content.LongLength, storageKey, hash, request.Description, request.FindingId, uploadedByUserId);
             _dbContext.Evidences.Add(evidence);
             await _dbContext.SaveChangesAsync(cancellationToken);
             return (await GetByIdAsync(evidence.Id, cancellationToken))!;
@@ -98,9 +92,8 @@ public sealed class EvidenceService : IEvidenceService
 
     public async Task<(EvidenceDto Metadata, byte[] Content)?> DownloadAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await _dbContext.Evidences.AsNoTracking().Include(x => x.Audit).SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var entity = await VisibleEvidence().SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (entity is null) return null;
-        _tenantGuard.EnsureOrganization(entity.Audit.OrganizationId);
         var path = GetSafePath(entity.StorageKey);
         if (!File.Exists(path)) throw new FileNotFoundException("El archivo físico de la evidencia no existe.");
         var content = await File.ReadAllBytesAsync(path, cancellationToken);
@@ -109,21 +102,33 @@ public sealed class EvidenceService : IEvidenceService
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await _dbContext.Evidences.Include(x => x.Audit).SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var entity = await _dbContext.Evidences.Include(x => x.Audit)
+            .SingleOrDefaultAsync(x => x.Id == id && x.IsActive, cancellationToken);
         if (entity is null) return false;
         _tenantGuard.EnsureOrganization(entity.Audit.OrganizationId);
         var path = GetSafePath(entity.StorageKey);
+
+        // Se conserva el registro para trazabilidad, pero queda inactivo y marcado como eliminado:
+        // el filtro global (IsDeleted) lo excluye de listados, consultas y descargas.
         entity.Deactivate();
+        entity.SoftDelete();
         await _dbContext.SaveChangesAsync(cancellationToken);
+
         if (File.Exists(path)) File.Delete(path);
         return true;
     }
 
-    private string GetSafePath(string storageKey)
+    /// <summary>
+    /// Evidencias activas visibles para el usuario actual. Incluye el filtro explícito por IsActive para
+    /// excluir también registros desactivados antes de que la eliminación aplicara soft delete.
+    /// </summary>
+    private IQueryable<Evidence> VisibleEvidence()
     {
-        var fullPath = Path.GetFullPath(Path.Combine(_storageRoot, storageKey.Replace('/', Path.DirectorySeparatorChar)));
-        if (!fullPath.StartsWith(_storageRoot, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Ruta de almacenamiento inválida.");
-        return fullPath;
+        var query = _dbContext.Evidences.AsNoTracking().Where(x => x.IsActive);
+        var restricted = _tenantGuard.RestrictedOrganizationId;
+        if (restricted.HasValue) query = query.Where(x => x.Audit.OrganizationId == restricted.Value);
+        return query;
     }
+
+    private string GetSafePath(string storageKey) => EvidenceFileRules.ResolveSafePath(_storageRoot, storageKey);
 }

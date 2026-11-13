@@ -1,4 +1,4 @@
-﻿using AuditCore.Api;
+using AuditCore.Api;
 using AuditCore.Application.Common.Interfaces;
 using AuditCore.Domain.Entities;
 using AuditCore.Infrastructure.Persistence;
@@ -20,10 +20,19 @@ public sealed class AuditCoreWebApplicationFactory
     private readonly string _databaseName =
         $"AuditCoreIntegrationTests-{Guid.NewGuid()}";
 
+    public string EvidenceStoragePath { get; } =
+        Path.Combine(
+            Path.GetTempPath(),
+            "auditcore-tests",
+            Guid.NewGuid().ToString("N"));
+
     protected override void ConfigureWebHost(
         IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.UseSetting(
+            "EvidenceStorage:Path",
+            EvidenceStoragePath);
 
         builder.ConfigureServices(services =>
         {
@@ -68,6 +77,11 @@ public sealed class AuditCoreWebApplicationFactory
         }
 
         await base.DisposeAsync();
+
+        if (Directory.Exists(EvidenceStoragePath))
+        {
+            Directory.Delete(EvidenceStoragePath, recursive: true);
+        }
     }
 
     private static void RemoveProductionDatabaseServices(
