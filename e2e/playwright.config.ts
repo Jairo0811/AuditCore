@@ -18,5 +18,11 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      // Smoke responsive real en viewport móvil (Chromium); no duplica el ciclo completo.
+      name: 'mobile-chromium',
+      use: { ...devices['Pixel 7'] },
+      testMatch: /responsive\.spec\.ts$/,
+    },
   ],
 });

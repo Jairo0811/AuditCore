@@ -75,11 +75,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
 
       - name: Install E2E dependencies
         working-directory: e2e
-        run: npm install
+        run: npm ci
 
       - name: Confirm E2E has no production dependency exposure
         working-directory: e2e
         run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit E2E tooling (Playwright)
+        working-directory: e2e
+        run: npm audit --audit-level=high

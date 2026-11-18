@@ -1,73 +1,41 @@
-import { expect, request as playwrightRequest, test } from '@playwright/test';
-
-const apiBaseUrl = process.env.E2E_API_URL ?? 'http://127.0.0.1:5047/api/';
-const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'admin@auditcore.local';
-const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'AuditCore-E2E-2026!';
-
-type AuthResponse = {
-  accessToken: string;
-};
+import { expect, test } from '@playwright/test';
+import { adminApi, getMe, uniqueSuffix } from './support/session';
 
 type EntityRef = {
   id: string;
 };
 
-async function createAuthenticatedApi() {
-  const anonymous = await playwrightRequest.newContext({ baseURL: apiBaseUrl });
-
-  const loginResponse = await anonymous.post('auth/login', {
-    data: {
-      email: adminEmail,
-      password: adminPassword,
-    },
-  });
-
-  expect(loginResponse.status()).toBe(200);
-  const auth = (await loginResponse.json()) as AuthResponse;
-  expect(auth.accessToken).toBeTruthy();
-  await anonymous.dispose();
-
-  return playwrightRequest.newContext({
-    baseURL: apiBaseUrl,
-    extraHTTPHeaders: {
-      Authorization: `Bearer ${auth.accessToken}`,
-    },
-  });
-}
-
 test('executes the complete audit lifecycle against the real API and database', async () => {
-  const api = await createAuthenticatedApi();
-  const suffix = `${Date.now()}-${Math.floor(Math.random() * 10_000)}`;
+  const api = await adminApi();
+  const suffix = uniqueSuffix();
 
   try {
     const organizationsResponse = await api.get('organizations');
     expect(organizationsResponse.status()).toBe(200);
     const organizations = (await organizationsResponse.json()) as EntityRef[];
     expect(organizations.length).toBeGreaterThan(0);
-    const organizationId = organizations[0].id;
 
-    const usersResponse = await api.get(`users?organizationId=${organizationId}`);
-    expect(usersResponse.status()).toBe(200);
-    const users = (await usersResponse.json()) as EntityRef[];
-    expect(users.length).toBeGreaterThan(0);
-    const adminUserId = users[0].id;
+    const me = await getMe(api);
+    const adminUserId = me.userId;
+    const lookupResponse = await api.get(`users/lookup?organizationId=${me.organizationId}`);
+    expect(lookupResponse.status()).toBe(200);
+    expect(((await lookupResponse.json()) as EntityRef[]).some((user) => user.id === adminUserId)).toBe(true);
 
     const auditResponse = await api.post('audits', {
       data: {
-        organizationId,
-        code: `AUD-E2E-${suffix}`,
+        organizationId: me.organizationId,
         title: `Auditoría E2E ${suffix}`,
         objective: 'Validar el ciclo completo de AuditCore mediante Playwright.',
-        scope: 'Flujo automatizado de QA de la versión 1.0.0.',
+        scope: 'Flujo automatizado de QA de la versión 1.2.0.',
       },
     });
     expect(auditResponse.status()).toBe(201);
-    const audit = (await auditResponse.json()) as EntityRef;
+    const audit = (await auditResponse.json()) as EntityRef & { code: string };
+    expect(audit.code).toBeTruthy();
 
     const riskResponse = await api.post('risks', {
       data: {
         auditId: audit.id,
-        code: `RSK-E2E-${suffix}`,
         title: 'Riesgo E2E',
         description: 'Riesgo creado por la validación end-to-end.',
         probability: 4,
@@ -83,7 +51,6 @@ test('executes the complete audit lifecycle against the real API and database', 
       data: {
         auditId: audit.id,
         riskId: risk.id,
-        code: `FND-E2E-${suffix}`,
         title: 'Hallazgo E2E',
         condition: 'Se detectó una condición simulada durante la prueba E2E.',
         criteria: 'El control esperado debe estar implementado y documentado.',
@@ -104,7 +71,6 @@ test('executes the complete audit lifecycle against the real API and database', 
         auditId: audit.id,
         findingId: finding.id,
         description: 'Evidencia generada automáticamente por Playwright.',
-        uploadedByUserId: adminUserId,
         file: {
           name: `auditcore-e2e-${suffix}.txt`,
           mimeType: 'text/plain',
@@ -113,7 +79,8 @@ test('executes the complete audit lifecycle against the real API and database', 
       },
     });
     expect(evidenceResponse.status()).toBe(201);
-    const evidence = (await evidenceResponse.json()) as EntityRef;
+    const evidence = (await evidenceResponse.json()) as EntityRef & { uploadedByUserId: string };
+    expect(evidence.uploadedByUserId).toBe(adminUserId);
 
     const downloadResponse = await api.get(`evidence/${evidence.id}/download`);
     expect(downloadResponse.status()).toBe(200);
@@ -171,16 +138,18 @@ test('executes the complete audit lifecycle against the real API and database', 
     const auditDetailsResponse = await api.get(`audits/${audit.id}`);
     expect(auditDetailsResponse.status()).toBe(200);
 
-    const dashboardResponse = await api.get(`reports/dashboard?organizationId=${organizationId}`);
+    const dashboardResponse = await api.get(`reports/dashboard?organizationId=${me.organizationId}`);
     expect(dashboardResponse.status()).toBe(200);
 
     const exportResponse = await api.get(
-      `reports/audits/export?organizationId=${organizationId}&format=Csv`,
+      `reports/audits/export?organizationId=${me.organizationId}&format=Csv`,
     );
     expect(exportResponse.status()).toBe(200);
     expect((await exportResponse.body()).byteLength).toBeGreaterThan(0);
 
     expect((await api.delete(`evidence/${evidence.id}`)).status()).toBe(204);
+    expect((await api.get(`evidence/${evidence.id}`)).status()).toBe(404);
+    expect((await api.get(`evidence/${evidence.id}/download`)).status()).toBe(404);
   } finally {
     await api.dispose();
   }
