@@ -67,7 +67,7 @@ public sealed class TwoTenantFixture : IAsyncLifetime
             db.Findings.Add(finding);
             var plan = new ActionPlan(finding.Id, "Plan B", null, UserB, DateTime.UtcNow.AddDays(10));
             db.ActionPlans.Add(plan);
-            var evidence = new Evidence(AuditB, "b.txt", "text/plain", 4, $"{AuditB:N}/b.txt", new string('B', 64), null, finding.Id, UserB);
+            var evidence = new AuditCore.Domain.Entities.Evidence(AuditB, "b.txt", "text/plain", 4, $"{AuditB:N}/b.txt", new string('B', 64), null, finding.Id, UserB);
             db.Evidences.Add(evidence);
             var branch = new Branch(OrganizationB, "Sucursal B", "SUC-B-001");
             db.Branches.Add(branch);
