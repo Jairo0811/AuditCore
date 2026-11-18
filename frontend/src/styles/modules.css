@@ -95,3 +95,6 @@
 .login-mobile-brand strong { color: var(--primary); }
 @media (max-width:900px) { .login-mobile-brand { display: flex; } }
 @media (max-width:700px) { .checkbox-grid { grid-template-columns: 1fr; } }
+/* Filas compactas: las acciones caben en una o dos líneas en lugar de apilarse y los códigos (AUD-2026-001) no se parten. */
+.data-table .row-actions { min-width: 230px; }
+.data-table td:first-child { white-space: nowrap; }

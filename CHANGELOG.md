@@ -29,6 +29,7 @@ Versión final de portafolio: pase de hardening, corrección y pulido sin amplia
 - Evidencias y Reportes: estados explícitos de carga, subida, descarga, eliminación y error (sin `alert()`), nombre de archivo del servidor vía `Content-Disposition` y liberación de object URLs.
 - La sesión se valida contra `/auth/me` al entrar, se sincroniza entre pestañas y la caché de consultas se limpia al cerrar sesión.
 - Login móvil con la identidad compacta de AuditCore visible cuando el panel visual se oculta.
+- Tablas más compactas: las acciones de fila ocupan una o dos líneas en lugar de apilarse, los códigos no se parten y Usuarios muestra activo/bloqueado en una sola columna «Estado».
 - Carga diferida por módulo: el bundle inicial bajó de 518 kB a 445 kB y desaparece la advertencia de tamaño de Vite.
 - Recursos de marca optimizados sin cambiar su apariencia: logo del login en WebP (1,9 MB → 0,3 MB), marca de la barra lateral (1,9 MB → 30 kB), favicon (1,7 MB → 50 kB), logo de reportes PDF (1,9 MB → 0,4 MB) y logo del README (1,7 MB → 0,18 MB).
 
@@ -59,7 +60,8 @@ Versión final de portafolio: pase de hardening, corrección y pulido sin amplia
 
 ### Documentation
 
-- README y CHANGELOG actualizados al estado final de v1.2.0.
+- README, CHANGELOG y `docs/ARCHITECTURE.md` actualizados al estado final de v1.2.0, con capturas reales generadas por Playwright sobre el stack de CI.
+- `frontend/README.md` reemplaza la plantilla de Vite por la descripción real del frontend.
 
 ### Cleanup
 

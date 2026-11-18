@@ -89,8 +89,13 @@ export function UsersPage() {
         { key: "branchName", label: "Sucursal" },
         { key: "departmentName", label: "Departamento" },
         { key: "roles", label: "Roles" },
-        { key: "isActive", label: "Activo" },
-        { key: "isLocked", label: "Bloqueado" },
+        {
+          key: "isActive",
+          label: "Estado",
+          render: (_value, row) => [row.isActive === true ? "Activo" : "Inactivo", row.isLocked === true ? "Bloqueado" : null]
+            .filter(Boolean)
+            .join(" · "),
+        },
       ]}
       createFields={[
         ...(organizations.allowed

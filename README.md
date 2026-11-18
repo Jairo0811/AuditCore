@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-<img src="https://img.shields.io/badge/Estado-v1.1.0%20finalizada-22C55E?style=for-the-badge" alt="Estado v1.1.0 finalizada" />
+<img src="https://img.shields.io/badge/Estado-v1.2.0%20finalizada%20y%20congelada-22C55E?style=for-the-badge" alt="Estado v1.2.0 finalizada y congelada" />
 </p>
 
 <br/><br/>
@@ -20,6 +20,9 @@
 <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready" />
 <a href="https://github.com/Jairo0811/AuditCore/actions/workflows/backend-ci.yml"><img src="https://github.com/Jairo0811/AuditCore/actions/workflows/backend-ci.yml/badge.svg" alt="Backend CI" /></a>
 <a href="https://github.com/Jairo0811/AuditCore/actions/workflows/frontend-ci.yml"><img src="https://github.com/Jairo0811/AuditCore/actions/workflows/frontend-ci.yml/badge.svg" alt="Frontend CI" /></a>
+<a href="https://github.com/Jairo0811/AuditCore/actions/workflows/e2e-ci.yml"><img src="https://github.com/Jairo0811/AuditCore/actions/workflows/e2e-ci.yml/badge.svg" alt="E2E CI" /></a>
+<a href="https://github.com/Jairo0811/AuditCore/actions/workflows/security-ci.yml"><img src="https://github.com/Jairo0811/AuditCore/actions/workflows/security-ci.yml/badge.svg" alt="Security CI" /></a>
+<a href="https://github.com/Jairo0811/AuditCore/actions/workflows/container-ci.yml"><img src="https://github.com/Jairo0811/AuditCore/actions/workflows/container-ci.yml/badge.svg" alt="Container CI" /></a>
 <img src="https://img.shields.io/badge/Accesibilidad-NORTIC%20B2%20%2F%20WCAG%202.0-0EA5E9?style=for-the-badge" alt="Accesibilidad alineada con NORTIC B2 y WCAG 2.0" />
 
 <br/><br/>
@@ -78,13 +81,16 @@ Vistos en conjunto, ambos proyectos documentan una continuidad real entre compa�
 
 ## ✅ Estado actual
 
-**AuditCore v1.1.0 está finalizada y estable.**
+**AuditCore v1.2.0 — finalizada y congelada.**
+
+La versión 1.2.0 es la versión final de portafolio: un pase de hardening, corrección y pulido sin ampliar el alcance funcional. La línea 1.x no recibirá nuevas funcionalidades.
 
 La plataforma incluye:
 
 - autenticación JWT con refresh tokens rotativos;
-- autorización RBAC basada en permisos;
+- autorización RBAC basada en permisos, aplicada por el backend y reflejada en la interfaz (navegación, rutas y acciones);
 - matriz RBAC predeterminada para todos los roles del sistema;
+- administración de permisos por rol y de roles por usuario con la asignación actual precargada;
 - aislamiento multiempresa por organización;
 - organizaciones, sucursales y departamentos;
 - asociación opcional de usuarios con organización, sucursal y departamento;
@@ -93,7 +99,7 @@ La plataforma incluye:
 - auditorías y ciclo de vida completo;
 - riesgos y tratamiento;
 - hallazgos y seguimiento;
-- evidencias con almacenamiento persistente y validación segura;
+- evidencias con almacenamiento persistente, validación de tipo y contenido, autoría del usuario autenticado y eliminación consistente;
 - planes de acción;
 - marcos, controles, preguntas, evaluaciones y respuestas;
 - Dashboard ejecutivo;
@@ -101,7 +107,7 @@ La plataforma incluye:
 - reportes PDF con wrapping y paginación dinámicos;
 - identidad visual propia integrada en frontend y reportes PDF;
 - navegación administrativa organizada por áreas funcionales;
-- CRUD administrativo con validaciones y manejo de relaciones;
+- CRUD administrativo con validaciones, confirmaciones accesibles y conflictos de negocio claros al eliminar registros relacionados;
 - generación automática de códigos;
 - estados y severidades legibles en la interfaz;
 - interfaz responsive para escritorio, tablet y móvil;
@@ -113,7 +119,7 @@ La plataforma incluye:
 - Dockerfiles y Docker Compose para ejecución full stack;
 - pruebas E2E con Playwright sobre SQL Server y API reales.
 
-El backend mantiene **57 pruebas automatizadas**, y la matriz final de validación de `v1.1.0` quedó completamente verde en GitHub Actions.
+El backend mantiene **178 pruebas automatizadas** (37 de dominio, 14 de aplicación y 127 de integración) y la suite E2E ejecuta **33 pruebas Playwright** sobre la API, SQL Server y el frontend reales. Los cinco workflows de GitHub Actions quedaron en verde para `v1.2.0`.
 
 ---
 
@@ -128,8 +134,11 @@ Entre las medidas incorporadas se incluyen:
 - navegación completa mediante teclado;
 - foco de teclado claramente visible;
 - enlace “Saltar al contenido principal”;
-- estructura semántica con `nav`, `main` y etiquetas ARIA;
-- cierre del menú móvil mediante `Escape`;
+- estructura semántica con `nav`, un único `main` y un único `h1` por pantalla;
+- diálogos modales con `role="dialog"`, foco inicial, focus trap, cierre con `Escape` y restauración del foco;
+- confirmaciones destructivas accesibles con el foco inicial en la opción segura;
+- tablas con encabezados `scope="col"`, botones de solo icono con nombre accesible y mensajes de error y resultado anunciados (`role="alert"`, `aria-live`);
+- menú móvil que mueve el foco al abrirse, se cierra con `Escape` y queda fuera del orden de tabulación cuando está cerrado;
 - iconos decorativos ocultos a tecnologías asistivas;
 - objetivos táctiles de al menos 44 px;
 - mejora de contraste y legibilidad;
@@ -137,6 +146,8 @@ Entre las medidas incorporadas se incluyen:
 - tablas con desplazamiento horizontal controlado;
 - soporte para reducción de movimiento;
 - compatibilidad con modos de alto contraste mediante `forced-colors`.
+
+Las pruebas E2E verifican el landmark `main` único, el comportamiento de teclado de los modales y la navegación móvil.
 
 > Esta implementación está alineada técnicamente con NORTIC B2:2017 / WCAG 2.0, pero no implica una certificación formal emitida por una entidad evaluadora.
 
@@ -175,7 +186,6 @@ Entre las medidas incorporadas se incluyen:
 - Axios
 - React Hook Form
 - Zod
-- Recharts
 
 ### QA, seguridad y entrega
 
@@ -240,14 +250,16 @@ AuditCore implementa:
 
 - access tokens JWT de corta duración;
 - refresh tokens rotativos;
-- políticas de autorización por permiso;
+- políticas de autorización por permiso, con la interfaz ocultando únicamente lo que el backend ya rechaza;
 - matriz RBAC para los roles `SUPER_ADMIN`, `ORGANIZATION_ADMIN`, `AUDIT_MANAGER`, `AUDITOR`, `AUDITEE`, `RISK_OWNER` y `VIEWER`;
-- aislamiento por organización;
+- aislamiento por organización, cubierto por pruebas de integración IDOR/BOLA;
 - validación de pertenencia multiempresa;
+- protección de cuentas `SUPER_ADMIN` frente a administradores de organización;
+- política mínima de contraseñas en el backend (10 a 128 caracteres, con al menos una letra y un número);
 - rate limiting para autenticación;
-- validación segura de evidencias;
-- protección contra traversal en almacenamiento de archivos;
-- manejo global de errores mediante Problem Details;
+- validación segura de evidencias (extensión, MIME declarado y firma del contenido) y autoría tomada del usuario autenticado;
+- protección contra traversal en almacenamiento de archivos mediante rutas relativas normalizadas;
+- manejo global de errores mediante Problem Details, sin exponer mensajes internos de SQL Server;
 - auditoría automática de creación y modificación;
 - secretos externos por variables de entorno;
 - auditoría automatizada de dependencias NuGet y npm.
@@ -350,6 +362,8 @@ Servicios por defecto:
 
 Los datos de SQL Server y las evidencias utilizan volúmenes persistentes.
 
+Container CI construye ambas imágenes y levanta este mismo stack con Docker Compose para verificar la salud de SQL Server y de la API, el servicio del frontend, el login, el dashboard, una escritura real y la persistencia de evidencias al recrear el contenedor de la API.
+
 ---
 
 ## 🧪 Validación
@@ -361,7 +375,16 @@ cd backend
 dotnet test .\AuditCore.slnx
 ```
 
-Estado validado: **57/57 pruebas pasando**.
+Estado validado: **178/178 pruebas pasando** (37 de dominio, 14 de aplicación y 127 de integración).
+
+Además, el pipeline comprueba que el script de migraciones se genera y que EF Core no tiene cambios de modelo pendientes:
+
+```powershell
+dotnet ef migrations has-pending-model-changes `
+  --project .\src\AuditCore.Infrastructure\AuditCore.Infrastructure.csproj `
+  --startup-project .\src\AuditCore.Api\AuditCore.Api.csproj `
+  --context AuditCoreDbContext
+```
 
 ### Frontend
 
@@ -374,7 +397,16 @@ npm run build
 
 ### End-to-End
 
-El pipeline E2E levanta SQL Server, aplica las migraciones de EF Core, inicia la API, compila el frontend y ejecuta Playwright sobre el sistema real.
+El pipeline E2E levanta SQL Server, aplica las migraciones de EF Core, inicia la API, compila el frontend y ejecuta Playwright sobre el sistema real. Las dependencias de la suite están fijadas en `e2e/package-lock.json` y se instalan con `npm ci`.
+
+```powershell
+cd e2e
+npm ci
+npx playwright install chromium
+npm test
+```
+
+Las 33 pruebas cubren autenticación y sesión, navegación por todos los módulos, accesibilidad (landmark `main` único, modales y menú móvil), RBAC con un usuario `VIEWER` (módulos visibles, ausencia de controles de mutación, página de acceso denegado y respuestas 403 del backend), precarga de permisos de roles y de roles de usuarios, ciclo de evidencias desde la interfaz (subida, descarga, eliminación y 404 posterior) y un smoke responsive en escritorio y en un viewport móvil.
 
 El flujo integral cubre:
 
@@ -398,7 +430,7 @@ Dashboard
 Reporte CSV
 ```
 
-### Matriz CI final de v1.1.0
+### Matriz CI final de v1.2.0
 
 | Pipeline | Estado |
 |---|---|
@@ -413,9 +445,10 @@ Reporte CSV
 ## 📦 Versionado
 
 - **v1.0.0** — cierre funcional inicial.
-- **v1.1.0** — cierre final con refinamientos administrativos, RBAC, responsive, accesibilidad y estabilización UX.
+- **v1.1.0** — refinamientos administrativos, RBAC, responsive, accesibilidad y estabilización UX.
+- **v1.2.0** — versión final de portafolio: hardening de evidencias, multi-tenancy y administración, RBAC en la interfaz, accesibilidad de diálogos, pruebas ampliadas y freeze.
 
-AuditCore se considera **finalizada** en su alcance actual y lista para demostración, portafolio y evolución futura si se decide continuar comercialmente.
+AuditCore v1.2.0 se considera **finalizada y congelada** en su alcance actual.
 
 Consulta [`CHANGELOG.md`](./CHANGELOG.md) para ver el detalle funcional y técnico de cada versión.
 
