@@ -123,6 +123,20 @@ El backend mantiene **178 pruebas automatizadas** (37 de dominio, 14 de aplicaci
 
 ---
 
+## 🖼️ Capturas
+
+Capturas reales de la aplicación en funcionamiento, generadas con Playwright sobre la API, SQL Server y el frontend del pipeline E2E (`e2e/tests/screenshots.spec.ts`, ejecutado con `E2E_SCREENSHOTS=1`).
+
+| Login | Dashboard |
+|---|---|
+| <img src="./docs/screenshots/login-desktop.jpg" alt="Pantalla de inicio de sesión de AuditCore en escritorio" width="420" /> | <img src="./docs/screenshots/dashboard.jpg" alt="Dashboard ejecutivo de AuditCore con indicadores de auditorías, riesgos y hallazgos" width="420" /> |
+
+| Auditorías | Vista móvil |
+|---|---|
+| <img src="./docs/screenshots/audits.jpg" alt="Módulo de auditorías con acciones según el estado de cada auditoría" width="420" /> | <img src="./docs/screenshots/audits-mobile.jpg" alt="Módulo de auditorías en un viewport móvil" width="190" /> |
+
+---
+
 ## ♿ Accesibilidad y responsive
 
 AuditCore fue revisada para funcionar correctamente en escritorio, tablet y móvil, incluyendo resoluciones pequeñas y escenarios de zoom.
