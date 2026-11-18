@@ -74,6 +74,8 @@ public sealed class DepartmentService : IDepartmentService
         var department = await _dbContext.Departments.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (department is null) return false;
         _tenantGuard.EnsureOrganization(department.OrganizationId);
+        if (await _dbContext.Users.IgnoreQueryFilters().AnyAsync(x => x.DepartmentId == id, cancellationToken))
+            throw new InvalidOperationException("El departamento no puede eliminarse porque tiene usuarios asignados. Reasigna o desvincula esos usuarios primero.");
         _dbContext.Departments.Remove(department);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;

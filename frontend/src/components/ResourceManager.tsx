@@ -1,44 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { useState, type Dispatch, type SetStateAction } from "react";
+import { hasAnyPermission } from "../features/auth/permissions";
+import { getApiErrorMessage } from "../lib/apiErrors";
 import { apiClient } from "../services/apiClient";
+import { ResourceFieldInput } from "./resource/ResourceFieldInput";
+import type { FormValues, ResourceColumn, ResourceField, ResourceRecord, ResourceRowAction } from "./resource/types";
+import { FeedbackMessage, type Feedback } from "./ui/FeedbackMessage";
+import { Modal } from "./ui/Modal";
+import { useConfirmDialog, type ConfirmOptions } from "./ui/useConfirmDialog";
 
-export type ResourceRecord = Record<string, unknown> & { id?: string };
-
-export interface ResourceOption {
-  label: string;
-  value: string | number;
-}
-
-export interface ResourceField {
-  name: string;
-  label: string;
-  type?: "text" | "number" | "textarea" | "datetime-local" | "select" | "multiselect" | "password";
-  required?: boolean;
-  options?: ResourceOption[] | ((values: Record<string, string>) => ResourceOption[]);
-  defaultValue?: string | number;
-  placeholder?: string;
-  min?: number;
-  max?: number;
-  clearFieldsOnChange?: string[];
-}
-
-export interface ResourceColumn {
-  key: string;
-  label: string;
-  render?: (value: unknown, row: ResourceRecord) => React.ReactNode;
-}
-
-export interface ResourceRowAction {
-  label: string;
-  endpoint: (row: ResourceRecord) => string;
-  method?: "post" | "put" | "delete";
-  body?: (row: ResourceRecord, values: Record<string, string>) => unknown;
-  confirm?: string;
-  fields?: ResourceField[];
-  submitLabel?: string;
-  isVisible?: (row: ResourceRecord) => boolean;
-}
+export type { FormValues, ResourceColumn, ResourceField, ResourceOption, ResourceRecord, ResourceRowAction } from "./resource/types";
 
 interface ResourceManagerProps {
   title: string;
@@ -48,16 +20,21 @@ interface ResourceManagerProps {
   columns: ResourceColumn[];
   createFields?: ResourceField[];
   updateFields?: ResourceField[];
-  mapCreate?: (values: Record<string, string>) => unknown;
-  mapUpdate?: (values: Record<string, string>, row: ResourceRecord) => unknown;
-  allowDelete?: boolean;
+  mapCreate?: (values: FormValues) => unknown;
+  mapUpdate?: (values: FormValues, row: ResourceRecord) => unknown;
   rowActions?: ResourceRowAction[];
-  canEdit?: (row: ResourceRecord) => boolean;
-}
-
-interface ProblemDetails {
-  title?: string;
-  detail?: string;
+  /** El usuario puede crear registros (permiso ya evaluado por la página). Por defecto no se muestra "Nuevo". */
+  canCreate?: boolean;
+  /** El usuario puede editar este registro (permiso y estado). Por defecto no se permite editar. */
+  canUpdate?: (row: ResourceRecord) => boolean;
+  /** El usuario puede eliminar este registro. Por defecto no se permite eliminar. */
+  canDelete?: (row: ResourceRecord) => boolean;
+  deleteConfirm?: (row: ResourceRecord) => ConfirmOptions;
+  /** Texto que identifica una fila en nombres accesibles y confirmaciones. Por defecto, la primera columna. */
+  getRowLabel?: (row: ResourceRecord) => string;
+  eyebrow?: string;
+  headingLevel?: 1 | 2;
+  emptyMessage?: string;
 }
 
 function normalizeValue(field: ResourceField, value: string) {
@@ -70,29 +47,45 @@ function normalizeValue(field: ResourceField, value: string) {
 function formatCell(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (Array.isArray(value)) return value.join(", ") || "—";
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
 
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (typeof error !== "object" || error === null) return fallback;
-
-  const response = (error as { response?: { data?: unknown } }).response;
-  if (!response) return error instanceof Error && error.message ? error.message : fallback;
-
-  if (typeof response.data === "string" && response.data.trim()) return response.data;
-
-  const problem = response.data as ProblemDetails | undefined;
-  return problem?.detail || problem?.title || fallback;
-}
-
-function initialValues(fields: ResourceField[]) {
+function initialValues(fields: ResourceField[]): FormValues {
   return Object.fromEntries(fields.map((field) => [field.name, String(field.defaultValue ?? "")]));
 }
 
-function resolveOptions(field: ResourceField, values: Record<string, string>) {
-  if (!field.options) return [];
-  return typeof field.options === "function" ? field.options(values) : field.options;
+/** Valores de edición: los campos del formulario más los valores escalares de la fila como contexto (p. ej. organizationId para filtrar selectores dependientes). */
+function valuesFromRow(fields: ResourceField[], row: ResourceRecord): FormValues {
+  const context = Object.fromEntries(
+    Object.entries(row)
+      .filter(([, raw]) => typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean")
+      .map(([key, raw]) => [key, String(raw)]),
+  );
+  return {
+    ...context,
+    ...Object.fromEntries(fields.map((field) => {
+      const raw = row[field.name];
+      if (field.type === "datetime-local" && typeof raw === "string") return [field.name, toLocalDateTimeInput(raw)];
+      if (field.type === "multiselect" && Array.isArray(raw)) return [field.name, raw.join(",")];
+      return [field.name, raw === null || raw === undefined ? "" : String(raw)];
+    })),
+  };
+}
+
+/** Convierte una fecha ISO UTC al formato local que espera un input datetime-local. */
+function toLocalDateTimeInput(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function isActionAllowed(action: ResourceRowAction) {
+  if (!action.permission) return true;
+  const permissions = Array.isArray(action.permission) ? action.permission : [action.permission];
+  return hasAnyPermission(...permissions);
 }
 
 export function ResourceManager({
@@ -105,104 +98,105 @@ export function ResourceManager({
   updateFields = createFields,
   mapCreate,
   mapUpdate,
-  allowDelete = false,
   rowActions = [],
-  canEdit = () => true,
+  canCreate = false,
+  canUpdate = () => false,
+  canDelete,
+  deleteConfirm,
+  getRowLabel,
+  eyebrow = "GESTIÓN",
+  headingLevel = 1,
+  emptyMessage = "No hay registros para mostrar.",
 }: ResourceManagerProps) {
   const queryClient = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const [mode, setMode] = useState<"closed" | "create" | "edit">("closed");
   const [selected, setSelected] = useState<ResourceRecord | null>(null);
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [pageError, setPageError] = useState<string | null>(null);
+  const [values, setValues] = useState<FormValues>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [activeAction, setActiveAction] = useState<ResourceRowAction | null>(null);
-  const [actionValues, setActionValues] = useState<Record<string, string>>({});
+  const [actionValues, setActionValues] = useState<FormValues>({});
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const Heading = headingLevel === 1 ? "h1" : "h2";
+  const allowedActions = rowActions.filter(isActionAllowed);
+  const showCreate = canCreate && createFields.length > 0;
+  const rowLabel = (row: ResourceRecord) =>
+    getRowLabel?.(row) ?? formatCell(row[columns[0]?.key ?? "id"]);
 
   const resourceQuery = useQuery({
     queryKey: [queryKey],
-    queryFn: async () => {
-      const { data } = await apiClient.get<ResourceRecord[]>(endpoint);
-      return data;
-    },
+    queryFn: async () => (await apiClient.get<ResourceRecord[]>(endpoint)).data,
   });
 
+  const rows = resourceQuery.data ?? [];
   const activeFields = mode === "edit" ? updateFields : createFields;
-  const initialCreateValues = useMemo(() => initialValues(createFields), [createFields]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      setError(null);
-      setPageError(null);
       const fields = mode === "edit" ? updateFields : createFields;
       const normalized = Object.fromEntries(
         fields.map((field) => [field.name, normalizeValue(field, values[field.name] ?? "")]),
       );
 
       if (mode === "edit" && selected?.id) {
-        const payload = mapUpdate ? mapUpdate(values, selected) : normalized;
-        await apiClient.put(`${endpoint}/${selected.id}`, payload);
-      } else {
-        const payload = mapCreate ? mapCreate(values) : normalized;
-        await apiClient.post(endpoint, payload);
+        await apiClient.put(`${endpoint}/${selected.id}`, mapUpdate ? mapUpdate(values, selected) : normalized);
+        return "Cambios guardados correctamente.";
       }
+
+      await apiClient.post(endpoint, mapCreate ? mapCreate(values) : normalized);
+      return "Registro creado correctamente.";
     },
-    onSuccess: async () => {
-      setMode("closed");
-      setSelected(null);
-      setValues(initialCreateValues);
+    onSuccess: async (message) => {
+      closeForm();
+      setFeedback({ tone: "success", message });
       await queryClient.invalidateQueries({ queryKey: [queryKey] });
     },
-    onError: (mutationError) =>
-      setError(getApiErrorMessage(mutationError, "No fue posible guardar los cambios. Revisa los datos y permisos.")),
+    onError: (error) =>
+      setFormError(getApiErrorMessage(error, "No fue posible guardar los cambios. Revisa los datos e inténtalo nuevamente.")),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      setPageError(null);
       await apiClient.delete(`${endpoint}/${id}`);
     },
     onSuccess: async () => {
+      setFeedback({ tone: "success", message: "Registro eliminado correctamente." });
       await queryClient.invalidateQueries({ queryKey: [queryKey] });
     },
-    onError: (mutationError) =>
-      setPageError(getApiErrorMessage(mutationError, "No fue posible eliminar el registro.")),
+    onError: (error) =>
+      setFeedback({ tone: "error", message: getApiErrorMessage(error, "No fue posible eliminar el registro.") }),
   });
 
   const actionMutation = useMutation({
     mutationFn: async ({ row, action, submittedValues }: {
       row: ResourceRecord;
       action: ResourceRowAction;
-      submittedValues: Record<string, string>;
+      submittedValues: FormValues;
     }) => {
-      if (action.confirm && !window.confirm(action.confirm)) return;
-      setPageError(null);
-      setActionError(null);
-      const method = action.method ?? "put";
       await apiClient.request({
         url: action.endpoint(row),
-        method,
+        method: action.method ?? "put",
         data: action.body?.(row, submittedValues),
       });
+      return action.successMessage ?? `${action.label}: acción completada correctamente.`;
     },
-    onSuccess: async () => {
-      setActiveAction(null);
-      setActionValues({});
-      setSelected(null);
+    onSuccess: async (message) => {
+      closeAction();
+      setFeedback({ tone: "success", message });
       await queryClient.invalidateQueries({ queryKey: [queryKey] });
     },
-    onError: (mutationError) => {
-      const message = getApiErrorMessage(mutationError, "No fue posible completar la acción solicitada.");
-      if (activeAction) setActionError(message);
-      else setPageError(message);
+    onError: (error, variables) => {
+      const message = getApiErrorMessage(error, "No fue posible completar la acción solicitada.");
+      if (variables.action.fields?.length) setActionError(message);
+      else setFeedback({ tone: "error", message });
     },
   });
 
-  function updateFieldValue(
-    field: ResourceField,
-    value: string,
-    setter: React.Dispatch<React.SetStateAction<Record<string, string>>>,
-  ) {
+  const busy = saveMutation.isPending || deleteMutation.isPending || actionMutation.isPending;
+
+  function updateFieldValue(field: ResourceField, value: string, setter: Dispatch<SetStateAction<FormValues>>) {
     setter((current) => {
       const next = { ...current, [field.name]: value };
       for (const dependentField of field.clearFieldsOnChange ?? []) next[dependentField] = "";
@@ -210,236 +204,262 @@ export function ResourceManager({
     });
   }
 
+  function closeForm() {
+    setMode("closed");
+    setSelected(null);
+    setFormError(null);
+  }
+
+  function closeAction() {
+    setActiveAction(null);
+    setActionValues({});
+    setActionError(null);
+    setSelected(null);
+  }
+
   function openCreate() {
     setSelected(null);
-    setValues(initialCreateValues);
+    setValues(initialValues(createFields));
+    setFormError(null);
+    setFeedback(null);
     setMode("create");
-    setError(null);
-    setPageError(null);
   }
 
   function openEdit(row: ResourceRecord) {
     setSelected(row);
-    setValues(
-      Object.fromEntries(
-        updateFields.map((field) => {
-          const raw = row[field.name];
-          if (field.type === "datetime-local" && typeof raw === "string") return [field.name, raw.slice(0, 16)];
-          if (field.type === "multiselect" && Array.isArray(raw)) return [field.name, raw.join(",")];
-          return [field.name, raw === null || raw === undefined ? "" : String(raw)];
-        }),
-      ),
-    );
+    setValues(valuesFromRow(updateFields, row));
+    setFormError(null);
+    setFeedback(null);
     setMode("edit");
-    setError(null);
-    setPageError(null);
   }
 
-  function triggerAction(row: ResourceRecord, action: ResourceRowAction) {
+  async function triggerAction(row: ResourceRecord, action: ResourceRowAction) {
+    setFeedback(null);
+
     if (action.fields?.length) {
       setSelected(row);
-      setActiveAction(action);
-      setActionValues(initialValues(action.fields));
+      setActionValues({ ...initialValues(action.fields), ...(action.getInitialValues?.(row) ?? {}) });
       setActionError(null);
+      setActiveAction(action);
       return;
+    }
+
+    if (action.confirm) {
+      const options = typeof action.confirm === "function" ? action.confirm(row) : action.confirm;
+      if (!(await confirm(options))) return;
     }
 
     actionMutation.mutate({ row, action, submittedValues: {} });
   }
 
-  function renderField(
-    field: ResourceField,
-    currentValues: Record<string, string>,
-    setter: React.Dispatch<React.SetStateAction<Record<string, string>>>,
-  ) {
-    const options = resolveOptions(field, currentValues);
-
-    return (
-      <label key={field.name}>
-        {field.label}
-        {field.type === "textarea" ? (
-          <textarea
-            required={field.required}
-            value={currentValues[field.name] ?? ""}
-            placeholder={field.placeholder}
-            onChange={(event) => updateFieldValue(field, event.target.value, setter)}
-          />
-        ) : field.type === "select" ? (
-          <select
-            required={field.required}
-            value={currentValues[field.name] ?? ""}
-            onChange={(event) => updateFieldValue(field, event.target.value, setter)}
-          >
-            <option value="">{field.placeholder ?? "Selecciona una opción"}</option>
-            {options.map((option) => (
-              <option key={String(option.value)} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        ) : field.type === "multiselect" ? (
-          <select
-            multiple
-            required={field.required}
-            value={(currentValues[field.name] ?? "").split(",").filter(Boolean)}
-            onChange={(event) => {
-              const selectedValues = Array.from(event.currentTarget.selectedOptions).map((option) => option.value);
-              updateFieldValue(field, selectedValues.join(","), setter);
-            }}
-          >
-            {options.map((option) => (
-              <option key={String(option.value)} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        ) : (
-          <input
-            type={field.type ?? "text"}
-            required={field.required}
-            min={field.min}
-            max={field.max}
-            placeholder={field.placeholder}
-            value={currentValues[field.name] ?? ""}
-            onChange={(event) => updateFieldValue(field, event.target.value, setter)}
-          />
-        )}
-      </label>
+  async function requestDelete(row: ResourceRecord) {
+    if (!row.id) return;
+    setFeedback(null);
+    const confirmed = await confirm(
+      deleteConfirm?.(row) ?? {
+        title: "Eliminar registro",
+        message: `¿Eliminar «${rowLabel(row)}»? Esta acción no se puede deshacer.`,
+        confirmLabel: "Eliminar",
+        tone: "danger",
+      },
     );
+    if (confirmed) deleteMutation.mutate(row.id);
   }
 
+  // La columna de acciones solo existe si al menos una fila ofrece alguna acción permitida.
+  const rowHasActions = (row: ResourceRecord) =>
+    Boolean(row.id) && (
+      (updateFields.length > 0 && canUpdate(row)) ||
+      (canDelete?.(row) ?? false) ||
+      allowedActions.some((action) => action.isVisible?.(row) ?? true)
+    );
+  const renderActionsColumn = rows.some(rowHasActions);
+
   return (
-    <main className="module-page">
+    <section className="module-page" aria-labelledby={`${queryKey}-title`}>
       <header className="module-header">
         <div>
-          <p className="eyebrow">GESTIÓN</p>
-          <h1>{title}</h1>
+          <p className="eyebrow">{eyebrow}</p>
+          <Heading id={`${queryKey}-title`}>{title}</Heading>
           <p>{description}</p>
         </div>
         <div className="module-header-actions">
-          <button type="button" className="secondary-button" onClick={() => resourceQuery.refetch()}>
-            <RefreshCw size={16} /> Actualizar
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={resourceQuery.isFetching}
+            onClick={() => resourceQuery.refetch()}
+          >
+            <RefreshCw size={16} aria-hidden="true" /> {resourceQuery.isFetching ? "Actualizando..." : "Actualizar"}
           </button>
-          {createFields.length > 0 && (
+          {showCreate && (
             <button type="button" onClick={openCreate}>
-              <Plus size={16} /> Nuevo
+              <Plus size={16} aria-hidden="true" /> Nuevo
             </button>
           )}
         </div>
       </header>
 
-      {pageError && <div className="panel-state error-message" role="alert">{pageError}</div>}
-      {resourceQuery.isLoading && <div className="panel-state">Cargando información...</div>}
-      {resourceQuery.isError && <div className="panel-state error-message">No fue posible cargar el módulo.</div>}
+      <FeedbackMessage feedback={feedback} onDismiss={() => setFeedback(null)} />
 
-      {!resourceQuery.isLoading && !resourceQuery.isError && (
-        <section className="data-panel">
+      {resourceQuery.isPending && (
+        <div className="panel-state" role="status">Cargando información...</div>
+      )}
+
+      {resourceQuery.isError && (
+        <div className="panel-state error-message" role="alert">
+          <p>{getApiErrorMessage(resourceQuery.error, "No fue posible cargar el módulo.")}</p>
+          <button type="button" className="secondary-button" onClick={() => resourceQuery.refetch()}>Reintentar</button>
+        </div>
+      )}
+
+      {resourceQuery.isSuccess && (
+        <div className="data-panel" aria-busy={resourceQuery.isFetching || busy}>
           <div className="table-scroll">
             <table className="data-table">
+              <caption className="sr-only">{title}</caption>
               <thead>
                 <tr>
-                  {columns.map((column) => <th key={column.key}>{column.label}</th>)}
-                  {(updateFields.length > 0 || allowDelete || rowActions.length > 0) && <th>Acciones</th>}
+                  {columns.map((column) => <th key={column.key} scope="col">{column.label}</th>)}
+                  {renderActionsColumn && <th scope="col">Acciones</th>}
                 </tr>
               </thead>
               <tbody>
-                {(resourceQuery.data ?? []).map((row, index) => (
-                  <tr key={row.id ?? index}>
-                    {columns.map((column) => (
-                      <td key={column.key}>{column.render ? column.render(row[column.key], row) : formatCell(row[column.key])}</td>
-                    ))}
-                    {(updateFields.length > 0 || allowDelete || rowActions.length > 0) && (
-                      <td>
-                        <div className="row-actions">
-                          {updateFields.length > 0 && row.id && canEdit(row) && (
-                            <button type="button" className="icon-button" title="Editar" onClick={() => openEdit(row)}>
-                              <Pencil size={15} />
-                            </button>
+                {rows.map((row, index) => {
+                  const label = rowLabel(row);
+                  const visibleActions = allowedActions.filter((action) => action.isVisible?.(row) ?? true);
+                  const editable = updateFields.length > 0 && Boolean(row.id) && canUpdate(row);
+                  const deletable = Boolean(row.id) && (canDelete?.(row) ?? false);
+
+                  return (
+                    <tr key={row.id ?? index}>
+                      {columns.map((column) => (
+                        <td key={column.key}>{column.render ? column.render(row[column.key], row) : formatCell(row[column.key])}</td>
+                      ))}
+                      {renderActionsColumn && (
+                        <td>
+                          {editable || deletable || visibleActions.length > 0 ? (
+                            <div className="row-actions">
+                              {editable && (
+                                <button
+                                  type="button"
+                                  className="icon-button"
+                                  aria-label={`Editar ${label}`}
+                                  title="Editar"
+                                  disabled={busy}
+                                  onClick={() => openEdit(row)}
+                                >
+                                  <Pencil size={15} aria-hidden="true" />
+                                </button>
+                              )}
+                              {visibleActions.map((action) => (
+                                <button
+                                  key={action.label}
+                                  type="button"
+                                  className="text-action"
+                                  aria-label={`${action.label} ${label}`}
+                                  disabled={busy}
+                                  onClick={() => void triggerAction(row, action)}
+                                >
+                                  {action.label}
+                                </button>
+                              ))}
+                              {deletable && (
+                                <button
+                                  type="button"
+                                  className="icon-button danger-button"
+                                  aria-label={`Eliminar ${label}`}
+                                  title="Eliminar"
+                                  disabled={busy}
+                                  onClick={() => void requestDelete(row)}
+                                >
+                                  <Trash2 size={15} aria-hidden="true" />
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="muted-text">Sin acciones disponibles</span>
                           )}
-                          {rowActions
-                            .filter((action) => action.isVisible?.(row) ?? true)
-                            .map((action) => (
-                              <button
-                                key={action.label}
-                                type="button"
-                                className="text-action"
-                                disabled={actionMutation.isPending}
-                                onClick={() => triggerAction(row, action)}
-                              >
-                                {action.label}
-                              </button>
-                            ))}
-                          {allowDelete && row.id && (
-                            <button
-                              type="button"
-                              className="icon-button danger-button"
-                              title="Eliminar"
-                              disabled={deleteMutation.isPending}
-                              onClick={() => window.confirm("¿Eliminar este registro? Esta acción no se puede deshacer.") && deleteMutation.mutate(row.id!)}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-          {(resourceQuery.data?.length ?? 0) === 0 && <div className="empty-table">No hay registros para mostrar.</div>}
-        </section>
+          {rows.length === 0 && <p className="empty-table">{emptyMessage}</p>}
+        </div>
       )}
 
       {mode !== "closed" && (
-        <div className="modal-backdrop" role="presentation">
-          <section className="modal-card" role="dialog" aria-modal="true" aria-label={`${mode === "edit" ? "Editar" : "Crear"} ${title}`}>
-            <header>
-              <div>
-                <p className="eyebrow">{mode === "edit" ? "EDITAR" : "NUEVO REGISTRO"}</p>
-                <h2>{title}</h2>
-              </div>
-              <button type="button" className="icon-button" onClick={() => setMode("closed")}><X size={18} /></button>
-            </header>
-
-            <form className="resource-form" onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }}>
-              {activeFields.map((field) => renderField(field, values, setValues))}
-              {error && <div className="form-error">{error}</div>}
-              <div className="form-actions">
-                <button type="button" className="secondary-button" onClick={() => setMode("closed")}>Cancelar</button>
-                <button type="submit" disabled={saveMutation.isPending}>{saveMutation.isPending ? "Guardando..." : "Guardar"}</button>
-              </div>
-            </form>
-          </section>
-        </div>
+        <Modal
+          eyebrow={mode === "edit" ? "EDITAR" : "NUEVO REGISTRO"}
+          title={mode === "edit" && selected ? `${title}: ${rowLabel(selected)}` : title}
+          onClose={closeForm}
+        >
+          <form
+            className="resource-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setFormError(null);
+              saveMutation.mutate();
+            }}
+          >
+            {activeFields.map((field) => (
+              <ResourceFieldInput
+                key={field.name}
+                field={field}
+                values={values}
+                onChange={(changed, value) => updateFieldValue(changed, value, setValues)}
+              />
+            ))}
+            {formError && <div className="form-error" role="alert">{formError}</div>}
+            <div className="form-actions">
+              <button type="button" className="secondary-button" onClick={closeForm}>Cancelar</button>
+              <button type="submit" disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? "Guardando..." : "Guardar"}
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {activeAction && selected && (
-        <div className="modal-backdrop" role="presentation">
-          <section className="modal-card" role="dialog" aria-modal="true" aria-label={activeAction.label}>
-            <header>
-              <div>
-                <p className="eyebrow">ACCIÓN</p>
-                <h2>{activeAction.label}</h2>
-              </div>
-              <button type="button" className="icon-button" onClick={() => setActiveAction(null)}><X size={18} /></button>
-            </header>
-            <form
-              className="resource-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                actionMutation.mutate({ row: selected, action: activeAction, submittedValues: actionValues });
-              }}
-            >
-              {(activeAction.fields ?? []).map((field) => renderField(field, actionValues, setActionValues))}
-              {actionError && <div className="form-error">{actionError}</div>}
-              <div className="form-actions">
-                <button type="button" className="secondary-button" onClick={() => setActiveAction(null)}>Cancelar</button>
-                <button type="submit" disabled={actionMutation.isPending}>
-                  {actionMutation.isPending ? "Procesando..." : (activeAction.submitLabel ?? "Confirmar")}
-                </button>
-              </div>
-            </form>
-          </section>
-        </div>
+        <Modal
+          eyebrow="ACCIÓN"
+          title={`${activeAction.label}: ${rowLabel(selected)}`}
+          description={activeAction.description}
+          onClose={closeAction}
+        >
+          <form
+            className="resource-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setActionError(null);
+              actionMutation.mutate({ row: selected, action: activeAction, submittedValues: actionValues });
+            }}
+          >
+            {(activeAction.fields ?? []).map((field) => (
+              <ResourceFieldInput
+                key={field.name}
+                field={field}
+                values={actionValues}
+                onChange={(changed, value) => updateFieldValue(changed, value, setActionValues)}
+              />
+            ))}
+            {actionError && <div className="form-error" role="alert">{actionError}</div>}
+            <div className="form-actions">
+              <button type="button" className="secondary-button" onClick={closeAction}>Cancelar</button>
+              <button type="submit" disabled={actionMutation.isPending}>
+                {actionMutation.isPending ? "Procesando..." : (activeAction.submitLabel ?? "Confirmar")}
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
-    </main>
+
+      {confirmDialog}
+    </section>
   );
 }

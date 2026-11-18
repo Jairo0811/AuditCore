@@ -1,4 +1,4 @@
-﻿using AuditCore.Application.Common.Security;
+using AuditCore.Application.Common.Security;
 using AuditCore.Application.Features.Users;
 using AuditCore.Application.Features.Users.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -25,6 +25,20 @@ public sealed class UsersController : ControllerBase
         CancellationToken cancellationToken)
     {
         return Ok(await _service.GetAllAsync(
+            organizationId,
+            cancellationToken));
+    }
+
+    /// <summary>
+    /// Lista mínima de usuarios activos para selectores de responsable, auditor líder o evaluador.
+    /// </summary>
+    [HttpGet("lookup")]
+    [Authorize(Policy = AuthorizationPolicies.UserLookup)]
+    public async Task<ActionResult<IReadOnlyCollection<UserLookupDto>>> Lookup(
+        [FromQuery] Guid? organizationId,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await _service.GetLookupAsync(
             organizationId,
             cancellationToken));
     }

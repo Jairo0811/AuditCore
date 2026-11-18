@@ -31,7 +31,8 @@ public static class DependencyInjection
                 policy.WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
                     .AllowAnyMethod()
-                    .AllowCredentials()));
+                    .AllowCredentials()
+                    .WithExposedHeaders("Content-Disposition")));
 
         var authPermitLimit = configuration.GetValue<int?>("RateLimiting:AuthPermitLimit") ?? 10;
 

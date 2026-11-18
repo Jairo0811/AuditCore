@@ -1,22 +1,50 @@
+import { lazy, Suspense, type ReactElement } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { AccessDeniedPage } from "./AccessDeniedPage";
 import { AppShell } from "./AppShell";
+import { ACCESS_DENIED_PATH, getLandingPath, permissionsForPath } from "./navigation";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { RequirePermission } from "./RequirePermission";
 import { LoginPage } from "../features/auth/pages/LoginPage";
-import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
-import { AuditsPage } from "../features/audits/pages/AuditsPage";
-import { RisksPage } from "../features/risks/pages/RisksPage";
-import { FindingsPage } from "../features/findings/pages/FindingsPage";
-import { EvidencePage } from "../features/evidence/pages/EvidencePage";
-import { ActionPlansPage } from "../features/actionPlans/pages/ActionPlansPage";
-import { FrameworksPage } from "../features/frameworks/pages/FrameworksPage";
-import { AssessmentsPage } from "../features/assessments/pages/AssessmentsPage";
-import { OrganizationsPage } from "../features/organizations/pages/OrganizationsPage";
-import { BranchesPage } from "../features/branches/pages/BranchesPage";
-import { DepartmentsPage } from "../features/departments/pages/DepartmentsPage";
-import { UsersPage } from "../features/users/pages/UsersPage";
-import { RolesPage } from "../features/roles/pages/RolesPage";
-import { ReportsPage } from "../features/reports/pages/ReportsPage";
-import { isAuthenticated } from "../features/auth/auth";
+import { useSession } from "../features/auth/useSession";
+
+// Las pantallas de módulo se cargan bajo demanda para reducir el bundle inicial.
+const DashboardPage = lazy(() => import("../features/dashboard/pages/DashboardPage").then((module) => ({ default: module.DashboardPage })));
+const AuditsPage = lazy(() => import("../features/audits/pages/AuditsPage").then((module) => ({ default: module.AuditsPage })));
+const RisksPage = lazy(() => import("../features/risks/pages/RisksPage").then((module) => ({ default: module.RisksPage })));
+const FindingsPage = lazy(() => import("../features/findings/pages/FindingsPage").then((module) => ({ default: module.FindingsPage })));
+const EvidencePage = lazy(() => import("../features/evidence/pages/EvidencePage").then((module) => ({ default: module.EvidencePage })));
+const ActionPlansPage = lazy(() => import("../features/actionPlans/pages/ActionPlansPage").then((module) => ({ default: module.ActionPlansPage })));
+const FrameworksPage = lazy(() => import("../features/frameworks/pages/FrameworksPage").then((module) => ({ default: module.FrameworksPage })));
+const AssessmentsPage = lazy(() => import("../features/assessments/pages/AssessmentsPage").then((module) => ({ default: module.AssessmentsPage })));
+const OrganizationsPage = lazy(() => import("../features/organizations/pages/OrganizationsPage").then((module) => ({ default: module.OrganizationsPage })));
+const BranchesPage = lazy(() => import("../features/branches/pages/BranchesPage").then((module) => ({ default: module.BranchesPage })));
+const DepartmentsPage = lazy(() => import("../features/departments/pages/DepartmentsPage").then((module) => ({ default: module.DepartmentsPage })));
+const UsersPage = lazy(() => import("../features/users/pages/UsersPage").then((module) => ({ default: module.UsersPage })));
+const RolesPage = lazy(() => import("../features/roles/pages/RolesPage").then((module) => ({ default: module.RolesPage })));
+const ReportsPage = lazy(() => import("../features/reports/pages/ReportsPage").then((module) => ({ default: module.ReportsPage })));
+
+const modules: Array<[path: string, element: ReactElement]> = [
+  ["/dashboard", <DashboardPage />],
+  ["/audits", <AuditsPage />],
+  ["/risks", <RisksPage />],
+  ["/findings", <FindingsPage />],
+  ["/evidence", <EvidencePage />],
+  ["/action-plans", <ActionPlansPage />],
+  ["/frameworks", <FrameworksPage />],
+  ["/assessments", <AssessmentsPage />],
+  ["/organizations", <OrganizationsPage />],
+  ["/branches", <BranchesPage />],
+  ["/departments", <DepartmentsPage />],
+  ["/users", <UsersPage />],
+  ["/roles", <RolesPage />],
+  ["/reports", <ReportsPage />],
+];
+
+function HomeRedirect() {
+  const session = useSession();
+  return <Navigate to={session ? getLandingPath() : "/login"} replace />;
+}
 
 export function App() {
   return (
@@ -30,24 +58,21 @@ export function App() {
           </ProtectedRoute>
         )}
       >
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/audits" element={<AuditsPage />} />
-        <Route path="/risks" element={<RisksPage />} />
-        <Route path="/findings" element={<FindingsPage />} />
-        <Route path="/evidence" element={<EvidencePage />} />
-        <Route path="/action-plans" element={<ActionPlansPage />} />
-        <Route path="/frameworks" element={<FrameworksPage />} />
-        <Route path="/assessments" element={<AssessmentsPage />} />
-        <Route path="/organizations" element={<OrganizationsPage />} />
-        <Route path="/branches" element={<BranchesPage />} />
-        <Route path="/departments" element={<DepartmentsPage />} />
-        <Route path="/users" element={<UsersPage />} />
-        <Route path="/roles" element={<RolesPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
+        {modules.map(([path, element]) => (
+          <Route
+            key={path}
+            path={path}
+            element={(
+              <RequirePermission permissions={permissionsForPath(path)}>
+                <Suspense fallback={<p className="panel-state" role="status">Cargando módulo...</p>}>{element}</Suspense>
+              </RequirePermission>
+            )}
+          />
+        ))}
+        <Route path={ACCESS_DENIED_PATH} element={<AccessDeniedPage />} />
       </Route>
 
-      <Route path="/" element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} />
-      <Route path="*" element={<Navigate to={isAuthenticated() ? "/dashboard" : "/login"} replace />} />
+      <Route path="*" element={<HomeRedirect />} />
     </Routes>
   );
 }

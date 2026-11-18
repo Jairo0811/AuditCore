@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  // Las capturas del README solo se generan bajo demanda (E2E_SCREENSHOTS=1).
+  testIgnore: process.env.E2E_SCREENSHOTS ? [] : [/screenshots\.spec\.ts$/],
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -17,6 +19,12 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      // Smoke responsive real en viewport móvil (Chromium); no duplica el ciclo completo.
+      name: 'mobile-chromium',
+      use: { ...devices['Pixel 7'] },
+      testMatch: /responsive\.spec\.ts$/,
     },
   ],
 });

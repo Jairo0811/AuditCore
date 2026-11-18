@@ -71,8 +71,10 @@ public sealed class BranchService : IBranchService
         var branch = await _dbContext.Branches.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (branch is null) return false;
         _tenantGuard.EnsureOrganization(branch.OrganizationId);
-        if (await _dbContext.Departments.AnyAsync(x => x.BranchId == id, cancellationToken))
+        if (await _dbContext.Departments.IgnoreQueryFilters().AnyAsync(x => x.BranchId == id, cancellationToken))
             throw new InvalidOperationException("La sucursal no puede eliminarse porque posee departamentos relacionados.");
+        if (await _dbContext.Users.IgnoreQueryFilters().AnyAsync(x => x.BranchId == id, cancellationToken))
+            throw new InvalidOperationException("La sucursal no puede eliminarse porque tiene usuarios asignados. Reasigna o desvincula esos usuarios primero.");
         _dbContext.Branches.Remove(branch);
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;

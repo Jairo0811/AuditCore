@@ -67,10 +67,10 @@ public sealed class OrganizationService : IOrganizationService
             throw new UnauthorizedAccessException("Solo un superadministrador puede eliminar organizaciones.");
         var organization = await _dbContext.Organizations.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (organization is null) return false;
-        var related = await _dbContext.Branches.AnyAsync(x => x.OrganizationId == id, cancellationToken)
-            || await _dbContext.Departments.AnyAsync(x => x.OrganizationId == id, cancellationToken)
-            || await _dbContext.Users.AnyAsync(x => x.OrganizationId == id, cancellationToken)
-            || await _dbContext.Audits.AnyAsync(x => x.OrganizationId == id, cancellationToken);
+        var related = await _dbContext.Branches.IgnoreQueryFilters().AnyAsync(x => x.OrganizationId == id, cancellationToken)
+            || await _dbContext.Departments.IgnoreQueryFilters().AnyAsync(x => x.OrganizationId == id, cancellationToken)
+            || await _dbContext.Users.IgnoreQueryFilters().AnyAsync(x => x.OrganizationId == id, cancellationToken)
+            || await _dbContext.Audits.IgnoreQueryFilters().AnyAsync(x => x.OrganizationId == id, cancellationToken);
         if (related) throw new InvalidOperationException("La organización no puede eliminarse porque posee registros relacionados.");
         _dbContext.Organizations.Remove(organization);
         await _dbContext.SaveChangesAsync(cancellationToken);

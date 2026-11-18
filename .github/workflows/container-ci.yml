@@ -39,3 +39,68 @@ jobs:
           --build-arg VITE_API_URL=http://127.0.0.1:5047/api
           --tag auditcore-web:ci
           ./frontend
+
+  compose-stack:
+    name: Full stack smoke (Docker Compose)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      MSSQL_SA_PASSWORD: Aa1!AuditCore${{ github.run_id }}
+      AUDITCORE_JWT_KEY: AuditCore-Compose-${{ github.run_id }}-Ephemeral-Key-For-CI-Only
+      AUDITCORE_ADMIN_PASSWORD: Compose!Admin${{ github.run_id }}Aa1
+      API: http://127.0.0.1:5047
+      WEB: http://127.0.0.1:8080
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start stack (SQL Server healthy, API and web running)
+        run: docker compose -f compose.yml up --build --detach --wait --wait-timeout 420
+
+      - name: API health
+        run: |
+          for i in $(seq 1 60); do
+            if curl --fail --silent "$API/health" > /dev/null; then exit 0; fi
+            sleep 3
+          done
+          exit 1
+
+      - name: Frontend served (including SPA deep links)
+        run: |
+          curl --fail --silent "$WEB/" | grep -q '<div id="root"></div>'
+          curl --fail --silent "$WEB/audits" | grep -q '<div id="root"></div>'
+          curl --fail --silent --output /dev/null "$WEB/assets/brand/auditcore-logo.webp"
+          curl --silent --head "$WEB/assets/brand/favicon.png" | grep -qi '^x-content-type-options: nosniff' 
+
+      - name: Login, dashboard, API write and evidence persistence across API recreation
+        shell: bash
+        run: |
+          set -euo pipefail
+          login() {
+            curl --fail --silent -X POST "$API/api/auth/login" -H 'Content-Type: application/json' \
+              -d "{\"email\":\"admin@auditcore.local\",\"password\":\"$AUDITCORE_ADMIN_PASSWORD\"}" | jq -r .accessToken
+          }
+          TOKEN=$(login)
+          AUTH="Authorization: Bearer $TOKEN"
+          ORG=$(curl --fail --silent -H "$AUTH" "$API/api/auth/me" | jq -r .organizationId)
+          curl --fail --silent -H "$AUTH" "$API/api/reports/dashboard" | jq -e '.totalAudits >= 0' > /dev/null
+          AUDIT=$(curl --fail --silent -X POST -H "$AUTH" -H 'Content-Type: application/json' \
+            -d "{\"organizationId\":\"$ORG\",\"title\":\"Compose smoke ${{ github.run_id }}\"}" "$API/api/audits" | jq -r .id)
+          printf 'AuditCore compose evidence %s' "${{ github.run_id }}" > /tmp/evidence.txt
+          EVIDENCE=$(curl --fail --silent -H "$AUTH" -F "auditId=$AUDIT" -F "file=@/tmp/evidence.txt;type=text/plain" "$API/api/evidence" | jq -r .id)
+
+          docker compose -f compose.yml up --detach --force-recreate --no-deps --wait api
+          for i in $(seq 1 60); do curl --fail --silent "$API/health" > /dev/null && break; sleep 3; done
+
+          AUTH="Authorization: Bearer $(login)"
+          curl --fail --silent -H "$AUTH" "$API/api/evidence/$EVIDENCE/download" | grep -q "AuditCore compose evidence"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' -X DELETE -H "$AUTH" "$API/api/evidence/$EVIDENCE")" = "204"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' -H "$AUTH" "$API/api/evidence/$EVIDENCE/download")" = "404"
+
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose -f compose.yml logs --tail 200
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f compose.yml down --volumes

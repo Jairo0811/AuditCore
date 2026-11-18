@@ -1,76 +1,25 @@
-import { apiClient } from "../../services/apiClient";
+import { apiClient, refreshAccessToken } from "../../services/apiClient";
+import { clearSession, getRefreshToken, saveSession, updateSessionAccess, type AuthResponse } from "./session";
 
-const ACCESS_TOKEN_KEY = "auditcore.accessToken";
-const REFRESH_TOKEN_KEY = "auditcore.refreshToken";
-const USER_KEY = "auditcore.user";
-
-export interface AuthUser {
-  email: string;
-  fullName: string;
-  roles: string[];
-  permissions: string[];
-}
-
-export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  accessTokenExpiresAtUtc: string;
-  email: string;
-  fullName: string;
-  roles: string[];
-  permissions: string[];
-}
+export {
+  clearSession,
+  getAccessToken,
+  getCurrentUser,
+  getRefreshToken,
+  getSession,
+  isAuthenticated,
+  saveSession,
+} from "./session";
+export type { AuthResponse, AuthUser, Session } from "./session";
 
 export interface LoginRequest {
   email: string;
   password: string;
 }
 
-export function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
-export function getRefreshToken() {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
-export function getCurrentUser(): AuthUser | null {
-  const value = localStorage.getItem(USER_KEY);
-
-  if (!value) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(value) as AuthUser;
-  } catch {
-    clearSession();
-    return null;
-  }
-}
-
-export function isAuthenticated() {
-  return Boolean(getAccessToken() && getRefreshToken());
-}
-
-export function saveSession(response: AuthResponse) {
-  localStorage.setItem(ACCESS_TOKEN_KEY, response.accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, response.refreshToken);
-  localStorage.setItem(
-    USER_KEY,
-    JSON.stringify({
-      email: response.email,
-      fullName: response.fullName,
-      roles: response.roles,
-      permissions: response.permissions,
-    } satisfies AuthUser),
-  );
-}
-
-export function clearSession() {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+interface MeResponse {
+  roles: string[];
+  permissions: string[];
 }
 
 export async function login(request: LoginRequest) {
@@ -79,19 +28,24 @@ export async function login(request: LoginRequest) {
   return data;
 }
 
-export async function refreshSession() {
-  const refreshToken = getRefreshToken();
+export function refreshSession() {
+  return refreshAccessToken();
+}
 
-  if (!refreshToken) {
-    throw new Error("No existe una sesión renovable.");
+/**
+ * Valida la sesión almacenada contra la API. Un access token expirado se renueva mediante el interceptor;
+ * si el refresh falla, el interceptor cierra la sesión y redirige al login. Los roles y permisos locales
+ * se alinean con los del token vigente.
+ */
+export async function verifySession() {
+  try {
+    const { data } = await apiClient.get<MeResponse>("/auth/me");
+    if (Array.isArray(data.roles) && Array.isArray(data.permissions)) {
+      updateSessionAccess(data.roles, data.permissions);
+    }
+  } catch {
+    // 401 sin refresh posible ya fue tratado por el interceptor; un error de red no invalida la sesión local.
   }
-
-  const { data } = await apiClient.post<AuthResponse>("/auth/refresh", {
-    refreshToken,
-  });
-
-  saveSession(data);
-  return data;
 }
 
 export async function logout() {
@@ -101,6 +55,8 @@ export async function logout() {
     if (refreshToken) {
       await apiClient.post("/auth/logout", { refreshToken });
     }
+  } catch {
+    // El cierre local de sesión no debe depender de que la API responda.
   } finally {
     clearSession();
   }

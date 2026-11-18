@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using AuditCore.Application.Common.Interfaces;
+using AuditCore.Application.Common.Security;
 using AuditCore.Application.Features.Users;
 using AuditCore.Application.Features.Users.Models;
 using AuditCore.Domain.Entities;
@@ -44,6 +45,23 @@ public sealed class UserService : IUserService
         return await query.OrderBy(x => x.FirstName).ThenBy(x => x.LastName).Select(Projection).ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<UserLookupDto>> GetLookupAsync(Guid? organizationId = null, CancellationToken cancellationToken = default)
+    {
+        var restricted = _tenantGuard.RestrictedOrganizationId;
+        if (restricted.HasValue)
+        {
+            if (organizationId.HasValue && organizationId.Value != restricted.Value)
+                throw new UnauthorizedAccessException("No tiene acceso a otra organización.");
+            organizationId = restricted.Value;
+        }
+
+        var query = _dbContext.Users.AsNoTracking().Where(x => x.IsActive && !x.IsLocked);
+        if (organizationId.HasValue) query = query.Where(x => x.OrganizationId == organizationId.Value);
+        return await query.OrderBy(x => x.FirstName).ThenBy(x => x.LastName)
+            .Select(x => new UserLookupDto(x.Id, x.OrganizationId, x.FirstName + " " + x.LastName, x.Email))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<UserDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Users.AsNoTracking().Where(x => x.Id == id);
@@ -64,7 +82,7 @@ public sealed class UserService : IUserService
         if (await _dbContext.Users.AnyAsync(x => x.OrganizationId == request.OrganizationId && x.Email == email, cancellationToken))
             throw new InvalidOperationException("Ya existe un usuario con este correo en la organización.");
         await ValidateRoleAssignmentAsync(request.RoleIds ?? [], cancellationToken);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
+        PasswordPolicy.EnsureValid(request.Password);
         var user = new User(request.OrganizationId, request.FirstName, request.LastName, email, "TEMPORARY_HASH", request.BranchId, request.DepartmentId);
         user.ChangePassword(_passwordHasher.HashPassword(user, request.Password));
         _dbContext.Users.Add(user);
@@ -75,9 +93,8 @@ public sealed class UserService : IUserService
 
     public async Task<UserDto?> UpdateAsync(Guid id, UpdateUserRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var user = await GetEditableUserAsync(id, cancellationToken);
         if (user is null) return null;
-        _tenantGuard.EnsureOrganization(user.OrganizationId);
         await ValidateStructureAsync(user.OrganizationId, request.BranchId, request.DepartmentId, cancellationToken);
 
         var email = NormalizeEmail(request.Email);
@@ -93,7 +110,7 @@ public sealed class UserService : IUserService
     {
         var user = await GetEditableUserAsync(id, cancellationToken);
         if (user is null) return false;
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
+        PasswordPolicy.EnsureValid(request.Password);
         user.ChangePassword(_passwordHasher.HashPassword(user, request.Password));
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
@@ -129,8 +146,23 @@ public sealed class UserService : IUserService
     private async Task<User?> GetEditableUserAsync(Guid id, CancellationToken cancellationToken)
     {
         var user = await _dbContext.Users.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
-        if (user is not null) _tenantGuard.EnsureOrganization(user.OrganizationId);
+        if (user is null) return null;
+        _tenantGuard.EnsureOrganization(user.OrganizationId);
+        await EnsureNotProtectedSuperAdminAsync(user.Id, cancellationToken);
         return user;
+    }
+
+    /// <summary>
+    /// Un actor restringido a su organización no puede modificar a un usuario que posee SUPER_ADMIN
+    /// (perfil, contraseña, roles, activación o bloqueo); de lo contrario podría tomar control de la cuenta global.
+    /// </summary>
+    private async Task EnsureNotProtectedSuperAdminAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        if (!_tenantGuard.RestrictedOrganizationId.HasValue) return;
+        var targetIsSuperAdmin = await _dbContext.UserRoles
+            .AnyAsync(x => x.UserId == userId && x.Role.Code == DefaultRoles.SuperAdmin, cancellationToken);
+        if (targetIsSuperAdmin)
+            throw new UnauthorizedAccessException("Solo un superadministrador puede modificar a otro superadministrador.");
     }
 
     private async Task ValidateStructureAsync(Guid organizationId, Guid? branchId, Guid? departmentId, CancellationToken cancellationToken)

@@ -4,6 +4,71 @@ Todos los cambios relevantes de AuditCore se documentan en este archivo.
 
 El proyecto sigue versionado semántico (`MAJOR.MINOR.PATCH`).
 
+## [1.2.0] - 2026-11-18
+
+Versión final de portafolio: pase de hardening, corrección y pulido sin ampliar el alcance funcional. Con esta versión AuditCore queda congelada.
+
+### Fixed
+
+- Eliminar una evidencia la desactiva y la marca como eliminada (`Deactivate()` + `SoftDelete()`); después del `DELETE` ya no aparece en el listado y el detalle, la descarga y un segundo `DELETE` responden 404. Antes la metadata seguía visible apuntando a un archivo ya borrado.
+- Al abrir «Permisos» de un rol, la selección ahora refleja los permisos ya asignados (los códigos se convierten a IDs). Antes comenzaba vacía y guardar reemplazaba la matriz completa.
+- Los roles de un usuario pueden administrarse después de crearlo mediante la acción «Roles», con los roles actuales precargados (`PUT /users/{id}/roles`).
+- Eliminar una sucursal o un departamento con usuarios asignados (o una sucursal con departamentos) devuelve un conflicto de negocio claro (409) en lugar de un error SQL genérico.
+- Las acciones de fila solo se ofrecen en los estados que el dominio acepta (por ejemplo, «Planificar» solo en borrador; transiciones de riesgos, hallazgos y planes de acción según su estado), evitando errores previsibles.
+- Las pantallas autenticadas ya no anidan elementos `<main>`; existe un único landmark principal y un único `h1` por pantalla.
+- Entrar a `/login` con una sesión válida redirige a la aplicación en lugar de mostrar una pantalla vacía; un token corrupto descarta la sesión y envía al login sin bucles.
+- `GET /auth/me` participa en la renovación automática del token (antes cualquier ruta `/auth/` quedaba excluida del refresh).
+- Compilación de las pruebas de aislamiento multiempresa (conflicto entre el tipo `Evidence` y el espacio de nombres de pruebas).
+
+### Improved
+
+- RBAC reflejado en la interfaz: códigos de permiso centralizados (`hasPermission`, `hasAnyPermission`, `hasRole`), navegación filtrada por permisos de consulta, rutas protegidas con página accesible de «Acceso denegado» y botones de crear, editar, eliminar, cambiar estado, subir o exportar visibles solo con el permiso correspondiente. El backend sigue siendo la fuente de verdad.
+- Los catálogos de los selectores solo se consultan cuando el usuario tiene permiso; los responsables y evaluadores se cargan desde `GET /users/lookup`. Sin `ORGANIZATIONS.VIEW`, auditorías y usuarios se crean en la organización de la sesión.
+- Un administrador de organización no ve acciones sobre cuentas `SUPER_ADMIN` ni puede ofrecer ese rol; crear y eliminar organizaciones solo se muestra al `SUPER_ADMIN`.
+- `ResourceManager`: capacidades declarativas (`canCreate`, `canUpdate`, `canDelete`, permiso por acción, valores iniciales de acciones), estados de carga, error con reintento y vacío, y mensajes de resultado. Se extrajeron `ResourceFieldInput` y los tipos compartidos.
+- Evidencias y Reportes: estados explícitos de carga, subida, descarga, eliminación y error (sin `alert()`), nombre de archivo del servidor vía `Content-Disposition` y liberación de object URLs.
+- La sesión se valida contra `/auth/me` al entrar, se sincroniza entre pestañas y la caché de consultas se limpia al cerrar sesión.
+- Login móvil con la identidad compacta de AuditCore visible cuando el panel visual se oculta.
+- Tablas más compactas: las acciones de fila ocupan una o dos líneas en lugar de apilarse, los códigos no se parten y Usuarios muestra activo/bloqueado en una sola columna «Estado».
+- Carga diferida por módulo: el bundle inicial bajó de 518 kB a 445 kB y desaparece la advertencia de tamaño de Vite.
+- Recursos de marca optimizados sin cambiar su apariencia: logo del login en WebP (1,9 MB → 0,3 MB), marca de la barra lateral (1,9 MB → 30 kB), favicon (1,7 MB → 50 kB), logo de reportes PDF (1,9 MB → 0,4 MB) y logo del README (1,7 MB → 0,18 MB).
+
+### Accessibility
+
+- Componente `Modal` común: `role="dialog"`/`alertdialog`, `aria-modal`, título y descripción asociados, foco inicial, focus trap, cierre con Escape, fondo inerte, bloqueo de scroll y restauración del foco. Aplicado a formularios y acciones de `ResourceManager`, preguntas y evaluaciones.
+- Confirmaciones destructivas (eliminar, cancelar, cerrar, desactivar, bloquear) con un diálogo accesible cuyo foco inicial está en la opción segura; se elimina `window.confirm`.
+- Tablas con `scope="col"` y `caption`; botones de solo icono con nombre accesible; iconos decorativos con `aria-hidden`; `aria-busy` en cargas; errores con `role="alert"` y resultados en una región `aria-live`.
+- Menú móvil: el foco entra al panel al abrirlo, vuelve al botón al cerrarlo y el panel cerrado queda fuera del orden de tabulación (`inert`).
+
+### Security
+
+- La autoría de una evidencia (`UploadedByUserId`) se toma del usuario autenticado; un `uploadedByUserId` enviado por el cliente se ignora.
+- Validación de evidencias por extensión permitida, coherencia con el MIME declarado y firma del contenido; ruta de almacenamiento resuelta con `Path.GetRelativePath` (una ruta como `<raíz>-otra-cosa` ya no puede considerarse descendiente).
+- Un actor restringido a su organización no puede modificar cuentas `SUPER_ADMIN` (perfil, contraseña, roles, activación o bloqueo) ni asignar ese rol.
+- Política mínima de contraseñas aplicada por el backend al crear usuarios y cambiar contraseñas: 10 a 128 caracteres con al menos una letra y un número.
+- `DbUpdateException` se traduce a 409 solo para violaciones de integridad conocidas (únicos y claves foráneas) con un mensaje seguro; el resto sigue siendo 500 y nunca se expone el mensaje de SQL Server.
+- La API expone `Content-Disposition` por CORS para que el frontend use el nombre de archivo del servidor.
+- Dependencias corregidas frente a avisos de severidad alta: axios 1.21.1 (incluye follow-redirects 1.16.3), zod 4.6.7, @playwright/test 1.55.1 y System.Security.Cryptography.Pkcs 10.0.13 (transitiva de SQL Server, antes 9.0.4).
+- Nginx mantiene las cabeceras de seguridad también en los recursos estáticos.
+
+### Tests
+
+- Backend: 178 pruebas (37 de dominio, 14 de aplicación y 127 de integración). Nuevas pruebas de ciclo de vida de evidencias, aislamiento multiempresa (IDOR/BOLA), autorización de endpoints críticos, protección de `SUPER_ADMIN`, eliminación de sucursales y departamentos con usuarios, política de contraseñas, permisos de roles, refresh token y mapeo de errores.
+- E2E: nuevas pruebas de un único `main` por pantalla, foco y cierre de modales, navegación móvil, visibilidad y 403 para `VIEWER`, precarga de permisos de roles, gestión de roles de usuarios, ciclo de evidencias desde la interfaz (404 posterior y autoría) y smoke responsive en escritorio y móvil.
+- E2E reproducible con `e2e/package-lock.json` y `npm ci`; el ciclo completo ya no envía campos que la API no utiliza (`code`, `uploadedByUserId`).
+- Container CI levanta el stack completo con Docker Compose y verifica salud, login, dashboard, escritura y persistencia de evidencias.
+
+### Documentation
+
+- README, CHANGELOG y `docs/ARCHITECTURE.md` actualizados al estado final de v1.2.0, con capturas reales generadas por Playwright sobre el stack de CI.
+- `frontend/README.md` reemplaza la plantilla de Vite por la descripción real del frontend.
+
+### Cleanup
+
+- Eliminados `WeatherForecast`, `httpClient.ts` (cliente Axios duplicado sin consumidores), `MainLayout.tsx`, `ModulePlaceholderPage.tsx`, recursos de plantilla de Vite (`vite.svg`, `hero.png`, `favicon.svg`, `icons.svg`) y la dependencia `recharts`, sin usos.
+- Versión 1.2.0 alineada en frontend, E2E y ensamblados del backend (`Directory.Build.props`).
+- Workflows sin disparadores de ramas obsoletas; versión de `dotnet-ef` alineada; el job E2E se fija a `ubuntu-24.04`, compatible con Playwright 1.55.
+
 ## [1.1.0] - 2026-08-12
 
 ### Añadido

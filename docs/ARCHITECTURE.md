@@ -130,6 +130,10 @@ sequenceDiagram
 
 El cliente nunca se considera fuente confiable del tenant. La organización y los permisos efectivos se obtienen del contexto autenticado y vuelven a validarse en backend.
 
+### Autorización en el frontend
+
+El frontend replica el modelo de permisos solo para la experiencia de usuario: la navegación, las rutas funcionales y las acciones (crear, editar, eliminar, cambiar estado, subir evidencias, exportar) se muestran únicamente si la sesión posee el permiso que exige el endpoint correspondiente. Los códigos se centralizan en `frontend/src/features/auth/permissions.ts`. Ocultar una acción no sustituye la autorización del backend, que sigue validando cada solicitud.
+
 ## Composition root
 
 `AuditCore.Api` es el único punto autorizado para componer la aplicación. Desde `Program` se registran controladores, OpenAPI, autenticación, autorización, módulos, persistencia, servicios técnicos, rate limiting y health checks.

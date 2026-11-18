@@ -77,6 +77,12 @@ public static class DependencyInjection
                     policy.RequireAuthenticatedUser();
                     policy.RequireClaim("permission", permission);
                 });
+
+            options.AddPolicy(AuthorizationPolicies.UserLookup, policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireClaim("permission", AuthorizationPolicies.UserLookupPermissions);
+            });
         });
 
         services.AddScoped<IJwtTokenService, JwtTokenService>();

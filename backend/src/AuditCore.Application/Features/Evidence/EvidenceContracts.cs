@@ -18,8 +18,7 @@ public sealed record CreateEvidenceRequest(
     string FileName,
     string ContentType,
     byte[] Content,
-    string? Description,
-    Guid? UploadedByUserId);
+    string? Description);
 
 public interface IEvidenceService
 {

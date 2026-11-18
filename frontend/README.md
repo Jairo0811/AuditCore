@@ -1,75 +1,39 @@
-# React + TypeScript + Vite
+# AuditCore — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SPA de AuditCore v1.2.0 construida con React 19, TypeScript 6 y Vite. Consume exclusivamente la API HTTP de AuditCore.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19 + TypeScript 6 + Vite
+- React Router (rutas protegidas por sesión y por permiso; módulos cargados bajo demanda)
+- TanStack Query (estado remoto) y Axios (`src/services/apiClient.ts`, con renovación automática del token)
+- React Hook Form + Zod (login)
+- lucide-react (iconografía)
 
-## React Compiler
+## Estructura
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```text
+src/
+├── app/          # App, rutas, AppShell, navegación por permisos y acceso denegado
+├── components/   # ResourceManager, campos de formulario, Modal, confirmaciones y feedback
+├── features/     # Pantallas por módulo y autenticación (sesión, permisos)
+├── hooks/        # Catálogos para selectores y media queries
+├── lib/          # Errores de API, descargas, formatos y etiquetas de dominio
+├── services/     # Cliente HTTP
+└── styles/       # Tema oscuro de AuditCore
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Autorización en la interfaz
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Los códigos de permiso de la API están centralizados en `src/features/auth/permissions.ts` (`hasPermission`, `hasAnyPermission`, `hasRole`). La navegación, las rutas y las acciones se muestran únicamente cuando la sesión posee el permiso correspondiente; una ruta abierta manualmente sin permiso muestra «Acceso denegado». El backend sigue siendo la única fuente de verdad de la autorización.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Comandos
 
+```bash
+npm ci
+npm run dev      # http://localhost:5173 (proxy de /api hacia http://127.0.0.1:5047)
+npm run lint
+npm run build
 ```
+
+En Docker y CI la URL de la API se define con `VITE_API_URL` en tiempo de compilación.
