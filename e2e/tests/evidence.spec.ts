@@ -22,7 +22,7 @@ test('evidence upload, download and delete through the UI, then 404 everywhere',
     await page.getByLabel('Archivo').setInputFiles({ name: fileName, mimeType: 'text/plain', buffer: Buffer.from(content, 'utf-8') });
     await page.getByRole('button', { name: 'Subir' }).click();
     await expect(page.getByRole('status').filter({ hasText: `Evidencia «${fileName}» subida correctamente.` })).toBeVisible();
-    await expect(page.getByRole('cell', { name: fileName })).toBeVisible();
+    await expect(page.getByRole('cell', { name: fileName, exact: true })).toBeVisible();
 
     const list = (await (await api.get(`evidence?auditId=${audit.id}`)).json()) as { id: string; fileName: string; uploadedByUserId: string }[];
     const evidence = list.find((item) => item.fileName === fileName);
@@ -40,7 +40,7 @@ test('evidence upload, download and delete through the UI, then 404 everywhere',
     await expect(confirm.getByRole('button', { name: 'Volver' })).toBeFocused();
     await confirm.getByRole('button', { name: 'Eliminar' }).click();
     await expect(page.getByRole('status').filter({ hasText: `Evidencia «${fileName}» eliminada.` })).toBeVisible();
-    await expect(page.getByRole('cell', { name: fileName })).toHaveCount(0);
+    await expect(page.getByRole('cell', { name: fileName, exact: true })).toHaveCount(0);
 
     expect((await api.get(`evidence/${evidence!.id}`)).status()).toBe(404);
     expect((await api.get(`evidence/${evidence!.id}/download`)).status()).toBe(404);

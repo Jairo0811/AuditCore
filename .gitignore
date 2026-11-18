@@ -38,3 +38,6 @@ evidence-storage/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Capturas generadas por e2e/tests/screenshots.spec.ts (las publicadas viven en docs/screenshots)
+e2e/screenshots/
