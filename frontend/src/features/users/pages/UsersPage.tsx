@@ -1,11 +1,9 @@
-import { ResourceManager } from "../../../components/ResourceManager";
-import { useLookupOptions } from "../../../hooks/useLookupOptions";
-
-interface OrganizationLookup {
-  id: string;
-  code: string;
-  name: string;
-}
+import { ResourceManager, type FormValues, type ResourceField, type ResourceRecord } from "../../../components/ResourceManager";
+import { hasPermission, isSuperAdmin, Permissions, Roles } from "../../auth/permissions";
+import { getSession } from "../../auth/session";
+import { useLookupOptions, useOrganizationLookup } from "../../../hooks/useLookupOptions";
+import { codesToIds } from "../../../lib/codeMapping";
+import { splitIds } from "../../../lib/formatters";
 
 interface BranchLookup {
   id: string;
@@ -28,32 +26,51 @@ interface RoleLookup {
   id: string;
   code: string;
   name: string;
+  isActive: boolean;
 }
 
+// Refleja PasswordPolicy del backend (fuente de verdad): 10-128 caracteres, al menos una letra y un número.
+const PASSWORD_HELP = "Entre 10 y 128 caracteres, con al menos una letra y un número.";
+
+const hasRole = (row: ResourceRecord, role: string) => Array.isArray(row.roles) && row.roles.includes(role);
+
 export function UsersPage() {
-  const organizations = useLookupOptions<OrganizationLookup>(
-    "organizations",
-    "/organizations",
-    (item) => `${item.code} — ${item.name}`,
-  );
+  const organizations = useOrganizationLookup();
+  const branches = useLookupOptions<BranchLookup>("branches", "/branches", (item) => `${item.code} — ${item.name}`, [Permissions.OrganizationsView]);
+  const departments = useLookupOptions<DepartmentLookup>("departments", "/departments", (item) => `${item.code} — ${item.name}`, [Permissions.OrganizationsView]);
+  const roles = useLookupOptions<RoleLookup>("roles", "/roles", (item) => `${item.code} — ${item.name}`, [Permissions.RolesView]);
 
-  const branches = useLookupOptions<BranchLookup>(
-    "branches",
-    "/branches",
-    (item) => `${item.code} — ${item.name}`,
-  );
+  const canManage = hasPermission(Permissions.UsersManage);
+  const actorIsSuperAdmin = isSuperAdmin();
+  // El backend impide que un actor restringido a su organización modifique cuentas SUPER_ADMIN.
+  const canModify = (row: ResourceRecord) => canManage && (actorIsSuperAdmin || !hasRole(row, Roles.SuperAdmin));
 
-  const departments = useLookupOptions<DepartmentLookup>(
-    "departments",
-    "/departments",
-    (item) => `${item.code} — ${item.name}`,
-  );
+  // Solo un SUPER_ADMIN puede asignar SUPER_ADMIN; los roles inactivos no se ofrecen.
+  const assignableRoles = roles.records.filter((role) => role.isActive && (actorIsSuperAdmin || role.code !== Roles.SuperAdmin));
+  const roleOptions = assignableRoles.map((role) => ({ label: `${role.code} — ${role.name}`, value: role.id }));
 
-  const roles = useLookupOptions<RoleLookup>(
-    "roles",
-    "/roles",
-    (item) => `${item.code} — ${item.name}`,
-  );
+  const branchOptions = (values: FormValues) => branches.records
+    .filter((branch) => branch.isActive && (!values.organizationId || branch.organizationId === values.organizationId))
+    .map((branch) => ({ label: `${branch.code} — ${branch.name}`, value: branch.id }));
+
+  const departmentOptions = (values: FormValues) => departments.records
+    .filter((department) => department.isActive)
+    .filter((department) => !values.organizationId || department.organizationId === values.organizationId)
+    .filter((department) => !values.branchId || !department.branchId || department.branchId === values.branchId)
+    .map((department) => ({ label: `${department.code} — ${department.name}`, value: department.id }));
+
+  const placementFields: ResourceField[] = branches.allowed
+    ? [
+        { name: "branchId", label: "Sucursal (opcional)", type: "select", options: branchOptions, clearFieldsOnChange: ["departmentId"], placeholder: "Sin sucursal / selecciona una sucursal" },
+        { name: "departmentId", label: "Departamento (opcional)", type: "select", options: departmentOptions, placeholder: "Sin departamento / selecciona un departamento" },
+      ]
+    : [];
+
+  const identityFields: ResourceField[] = [
+    { name: "firstName", label: "Nombre", required: true, maxLength: 100, autoComplete: "off" },
+    { name: "lastName", label: "Apellido", required: true, maxLength: 100, autoComplete: "off" },
+    { name: "email", label: "Correo", type: "email", required: true, maxLength: 320, autoComplete: "off" },
+  ];
 
   return (
     <ResourceManager
@@ -61,115 +78,138 @@ export function UsersPage() {
       description="Gestiona usuarios, acceso, roles y pertenencia a organización, sucursal y departamento."
       endpoint="/users"
       queryKey="users"
+      canCreate={canManage}
+      canUpdate={canModify}
+      getRowLabel={(row) => String(row.fullName ?? row.email ?? "usuario")}
+      emptyMessage="No hay usuarios registrados."
       columns={[
         { key: "fullName", label: "Nombre" },
         { key: "email", label: "Correo" },
         { key: "organizationName", label: "Organización" },
         { key: "branchName", label: "Sucursal" },
         { key: "departmentName", label: "Departamento" },
-        { key: "roles", label: "Roles", render: (value) => Array.isArray(value) ? value.join(", ") : "—" },
+        { key: "roles", label: "Roles" },
         { key: "isActive", label: "Activo" },
         { key: "isLocked", label: "Bloqueado" },
       ]}
       createFields={[
+        ...(organizations.allowed
+          ? [{
+              name: "organizationId",
+              label: "Organización",
+              type: "select",
+              required: true,
+              options: organizations.options,
+              clearFieldsOnChange: ["branchId", "departmentId"],
+              placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
+            } satisfies ResourceField]
+          : []),
+        ...placementFields,
+        ...identityFields,
         {
-          name: "organizationId",
-          label: "Organización",
-          type: "select",
+          name: "password",
+          label: "Contraseña",
+          type: "password",
           required: true,
-          options: organizations.options,
-          clearFieldsOnChange: ["branchId", "departmentId"],
-          placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
+          minLength: 10,
+          maxLength: 128,
+          autoComplete: "new-password",
+          helpText: PASSWORD_HELP,
         },
-        {
-          name: "branchId",
-          label: "Sucursal (opcional)",
-          type: "select",
-          options: (values) => branches.records
-            .filter((branch) => branch.isActive && (!values.organizationId || branch.organizationId === values.organizationId))
-            .map((branch) => ({ label: `${branch.code} — ${branch.name}`, value: branch.id })),
-          clearFieldsOnChange: ["departmentId"],
-          placeholder: "Sin sucursal / selecciona una sucursal",
-        },
-        {
-          name: "departmentId",
-          label: "Departamento (opcional)",
-          type: "select",
-          options: (values) => departments.records
-            .filter((department) => department.isActive)
-            .filter((department) => !values.organizationId || department.organizationId === values.organizationId)
-            .filter((department) => !values.branchId || !department.branchId || department.branchId === values.branchId)
-            .map((department) => ({ label: `${department.code} — ${department.name}`, value: department.id })),
-          placeholder: "Sin departamento / selecciona un departamento",
-        },
-        { name: "firstName", label: "Nombre", required: true },
-        { name: "lastName", label: "Apellido", required: true },
-        { name: "email", label: "Correo", required: true },
-        { name: "password", label: "Contraseña", type: "password", required: true },
-        {
-          name: "roleIds",
-          label: "Roles",
-          type: "multiselect",
-          options: roles.options,
-          placeholder: "Selecciona uno o varios roles",
-        },
-      ]}
-      updateFields={[
-        {
-          name: "branchId",
-          label: "Sucursal (opcional)",
-          type: "select",
-          options: (values) => branches.records
-            .filter((branch) => branch.isActive && (!values.organizationId || branch.organizationId === values.organizationId))
-            .map((branch) => ({ label: `${branch.code} — ${branch.name}`, value: branch.id })),
-          clearFieldsOnChange: ["departmentId"],
-          placeholder: "Sin sucursal / selecciona una sucursal",
-        },
-        {
-          name: "departmentId",
-          label: "Departamento (opcional)",
-          type: "select",
-          options: (values) => departments.records
-            .filter((department) => department.isActive)
-            .filter((department) => !values.organizationId || department.organizationId === values.organizationId)
-            .filter((department) => !values.branchId || !department.branchId || department.branchId === values.branchId)
-            .map((department) => ({ label: `${department.code} — ${department.name}`, value: department.id })),
-          placeholder: "Sin departamento / selecciona un departamento",
-        },
-        { name: "firstName", label: "Nombre", required: true },
-        { name: "lastName", label: "Apellido", required: true },
-        { name: "email", label: "Correo", required: true },
+        ...(roles.allowed
+          ? [{ name: "roleIds", label: "Roles", type: "multiselect", options: roleOptions, placeholder: "No hay roles disponibles." } satisfies ResourceField]
+          : []),
       ]}
       mapCreate={(values) => ({
-        organizationId: values.organizationId,
+        organizationId: values.organizationId || getSession()?.organizationId,
         branchId: values.branchId || null,
         departmentId: values.departmentId || null,
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
         password: values.password,
-        roleIds: values.roleIds ? values.roleIds.split(",").filter(Boolean) : [],
+        roleIds: splitIds(values.roleIds),
       })}
-      mapUpdate={(values, row) => ({
+      updateFields={[...placementFields, ...identityFields]}
+      mapUpdate={(values) => ({
         branchId: values.branchId || null,
         departmentId: values.departmentId || null,
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
-        organizationId: row.organizationId,
       })}
       rowActions={[
-        { label: "Activar", endpoint: (row) => `/users/${row.id}/activate`, isVisible: (row) => row.isActive !== true },
-        { label: "Desactivar", endpoint: (row) => `/users/${row.id}/deactivate`, isVisible: (row) => row.isActive === true },
-        { label: "Bloquear", endpoint: (row) => `/users/${row.id}/lock`, isVisible: (row) => row.isLocked !== true },
-        { label: "Desbloquear", endpoint: (row) => `/users/${row.id}/unlock`, isVisible: (row) => row.isLocked === true },
+        {
+          label: "Roles",
+          permission: Permissions.UsersManage,
+          endpoint: (row) => `/users/${row.id}/roles`,
+          isVisible: (row) => canModify(row) && roles.isSuccess && codesToIds(row.roles, roles.records) !== null,
+          description: "Selecciona uno o varios roles. Al guardar, la selección reemplaza los roles actuales del usuario.",
+          fields: [{ name: "roleIds", label: "Roles asignados", type: "multiselect", options: roleOptions }],
+          getInitialValues: (row) => ({ roleIds: (codesToIds(row.roles, roles.records) ?? []).join(",") }),
+          submitLabel: "Guardar roles",
+          successMessage: "Roles del usuario actualizados.",
+          body: (_row, values) => ({ roleIds: splitIds(values.roleIds) }),
+        },
+        {
+          label: "Activar",
+          permission: Permissions.UsersManage,
+          endpoint: (row) => `/users/${row.id}/activate`,
+          isVisible: (row) => canModify(row) && row.isActive !== true,
+          successMessage: "Usuario activado.",
+        },
+        {
+          label: "Desactivar",
+          permission: Permissions.UsersManage,
+          endpoint: (row) => `/users/${row.id}/deactivate`,
+          isVisible: (row) => canModify(row) && row.isActive === true,
+          successMessage: "Usuario desactivado.",
+          confirm: (row) => ({
+            title: "Desactivar usuario",
+            message: `¿Desactivar a «${String(row.fullName)}»? No podrá iniciar sesión hasta que se reactive.`,
+            confirmLabel: "Desactivar",
+            tone: "danger",
+          }),
+        },
+        {
+          label: "Bloquear",
+          permission: Permissions.UsersManage,
+          endpoint: (row) => `/users/${row.id}/lock`,
+          isVisible: (row) => canModify(row) && row.isLocked !== true,
+          successMessage: "Usuario bloqueado.",
+          confirm: (row) => ({
+            title: "Bloquear usuario",
+            message: `¿Bloquear a «${String(row.fullName)}»? Sus sesiones no podrán renovarse.`,
+            confirmLabel: "Bloquear",
+            tone: "danger",
+          }),
+        },
+        {
+          label: "Desbloquear",
+          permission: Permissions.UsersManage,
+          endpoint: (row) => `/users/${row.id}/unlock`,
+          isVisible: (row) => canModify(row) && row.isLocked === true,
+          successMessage: "Usuario desbloqueado.",
+        },
         {
           label: "Contraseña",
+          permission: Permissions.UsersManage,
           endpoint: (row) => `/users/${row.id}/password`,
+          isVisible: canModify,
           fields: [
-            { name: "password", label: "Nueva contraseña", type: "password", required: true },
+            {
+              name: "password",
+              label: "Nueva contraseña",
+              type: "password",
+              required: true,
+              minLength: 10,
+              maxLength: 128,
+              autoComplete: "new-password",
+              helpText: PASSWORD_HELP,
+            },
           ],
           submitLabel: "Cambiar contraseña",
+          successMessage: "Contraseña actualizada.",
           body: (_row, values) => ({ password: values.password }),
         },
       ]}

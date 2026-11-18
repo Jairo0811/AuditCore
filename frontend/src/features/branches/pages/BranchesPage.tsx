@@ -1,18 +1,15 @@
 import { ResourceManager } from "../../../components/ResourceManager";
-import { useLookupOptions } from "../../../hooks/useLookupOptions";
+import { hasPermission, Permissions } from "../../auth/permissions";
+import { useOrganizationLookup } from "../../../hooks/useLookupOptions";
 
-interface OrganizationLookup {
-  id: string;
-  code: string;
-  name: string;
-}
+const activeOptions = [
+  { label: "Activa", value: "true" },
+  { label: "Inactiva", value: "false" },
+];
 
 export function BranchesPage() {
-  const organizations = useLookupOptions<OrganizationLookup>(
-    "organizations",
-    "/organizations",
-    (item) => `${item.code} — ${item.name}`,
-  );
+  const organizations = useOrganizationLookup();
+  const canManage = hasPermission(Permissions.OrganizationsManage);
 
   return (
     <ResourceManager
@@ -20,6 +17,11 @@ export function BranchesPage() {
       description="Administra las sedes y ubicaciones operativas de cada organización. El código se genera automáticamente."
       endpoint="/branches"
       queryKey="branches"
+      canCreate={canManage}
+      canUpdate={() => canManage}
+      canDelete={() => canManage}
+      getRowLabel={(row) => String(row.name ?? row.code ?? "sucursal")}
+      emptyMessage="No hay sucursales registradas."
       columns={[
         { key: "code", label: "Código" },
         { key: "name", label: "Nombre" },
@@ -36,29 +38,30 @@ export function BranchesPage() {
           options: organizations.options,
           placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
         },
-        { name: "name", label: "Nombre", required: true },
+        { name: "name", label: "Nombre", required: true, maxLength: 200 },
         { name: "address", label: "Dirección", type: "textarea" },
       ]}
+      mapCreate={(values) => ({
+        organizationId: values.organizationId,
+        name: values.name,
+        address: values.address || null,
+      })}
       updateFields={[
-        { name: "name", label: "Nombre", required: true },
+        { name: "name", label: "Nombre", required: true, maxLength: 200 },
         { name: "address", label: "Dirección", type: "textarea" },
-        {
-          name: "isActive",
-          label: "Estado",
-          type: "select",
-          required: true,
-          options: [
-            { label: "Activa", value: "true" },
-            { label: "Inactiva", value: "false" },
-          ],
-        },
+        { name: "isActive", label: "Estado", type: "select", required: true, options: activeOptions },
       ]}
       mapUpdate={(values) => ({
         name: values.name,
         address: values.address || null,
         isActive: values.isActive === "true",
       })}
-      allowDelete
+      deleteConfirm={(row) => ({
+        title: "Eliminar sucursal",
+        message: `¿Eliminar la sucursal «${String(row.name)}»? No es posible si tiene departamentos o usuarios asignados.`,
+        confirmLabel: "Eliminar",
+        tone: "danger",
+      })}
     />
   );
 }

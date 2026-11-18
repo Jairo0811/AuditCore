@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { ResourceManager } from "../../../components/ResourceManager";
+import { hasPermission, Permissions } from "../../auth/permissions";
 import { useLookupOptions } from "../../../hooks/useLookupOptions";
 
 interface FrameworkLookup {
@@ -10,18 +11,20 @@ interface FrameworkLookup {
   version: string;
 }
 
+const statusOptions = [
+  { label: "Activo", value: "true" },
+  { label: "Inactivo", value: "false" },
+];
+
 export function FrameworksPage() {
   const queryClient = useQueryClient();
   const frameworks = useLookupOptions<FrameworkLookup>(
     "frameworks",
     "/frameworks",
     (item) => `${item.code} — ${item.name} (${item.version})`,
+    [Permissions.FrameworksView],
   );
-
-  const statusOptions = [
-    { label: "Activo", value: "true" },
-    { label: "Inactivo", value: "false" },
-  ];
+  const canManage = hasPermission(Permissions.FrameworksManage);
 
   async function refreshWorkspace() {
     await Promise.all([
@@ -31,7 +34,7 @@ export function FrameworksPage() {
   }
 
   return (
-    <main className="module-page frameworks-page">
+    <div className="module-page frameworks-page">
       <header className="module-header frameworks-page-header">
         <div>
           <p className="eyebrow">CUMPLIMIENTO</p>
@@ -40,17 +43,22 @@ export function FrameworksPage() {
         </div>
         <div className="module-header-actions">
           <button type="button" className="secondary-button" onClick={refreshWorkspace}>
-            <RefreshCw size={16} /> Actualizar
+            <RefreshCw size={16} aria-hidden="true" /> Actualizar todo
           </button>
         </div>
       </header>
 
-      <section className="frameworks-workspace" aria-label="Gestión de marcos y controles">
+      <div className="frameworks-workspace">
         <ResourceManager
           title="Marcos de control"
           description="Configura marcos de referencia para la evaluación de controles."
           endpoint="/frameworks"
           queryKey="frameworks"
+          headingLevel={2}
+          eyebrow="MARCOS"
+          canCreate={canManage}
+          canUpdate={() => canManage}
+          emptyMessage="No hay marcos de control registrados."
           columns={[
             { key: "code", label: "Código" },
             { key: "name", label: "Nombre" },
@@ -59,19 +67,31 @@ export function FrameworksPage() {
             { key: "isActive", label: "Activo" },
           ]}
           createFields={[
-            { name: "name", label: "Nombre", required: true },
-            { name: "code", label: "Código", required: true },
-            { name: "version", label: "Versión", required: true },
+            { name: "name", label: "Nombre", required: true, maxLength: 200 },
+            { name: "code", label: "Código", required: true, maxLength: 50 },
+            { name: "version", label: "Versión", required: true, maxLength: 50 },
             { name: "description", label: "Descripción", type: "textarea" },
           ]}
+          mapCreate={(values) => ({
+            name: values.name,
+            code: values.code,
+            version: values.version,
+            description: values.description || null,
+          })}
           updateFields={[
-            { name: "name", label: "Nombre", required: true },
-            { name: "code", label: "Código", required: true },
-            { name: "version", label: "Versión", required: true },
+            { name: "name", label: "Nombre", required: true, maxLength: 200 },
+            { name: "code", label: "Código", required: true, maxLength: 50 },
+            { name: "version", label: "Versión", required: true, maxLength: 50 },
             { name: "description", label: "Descripción", type: "textarea" },
             { name: "isActive", label: "Estado", type: "select", required: true, options: statusOptions },
           ]}
-          mapUpdate={(values) => ({ ...values, isActive: values.isActive === "true" })}
+          mapUpdate={(values) => ({
+            name: values.name,
+            code: values.code,
+            version: values.version,
+            description: values.description || null,
+            isActive: values.isActive === "true",
+          })}
         />
 
         <ResourceManager
@@ -79,6 +99,11 @@ export function FrameworksPage() {
           description="Define controles, dominios y ponderaciones dentro de los marcos."
           endpoint="/frameworks/controls"
           queryKey="framework-controls"
+          headingLevel={2}
+          eyebrow="CONTROLES"
+          canCreate={canManage}
+          canUpdate={() => canManage}
+          emptyMessage="No hay controles registrados."
           columns={[
             { key: "code", label: "Código" },
             { key: "title", label: "Control" },
@@ -95,16 +120,24 @@ export function FrameworksPage() {
               options: frameworks.options,
               placeholder: frameworks.isLoading ? "Cargando marcos..." : "Selecciona un marco",
             },
-            { name: "code", label: "Código", required: true },
-            { name: "title", label: "Título", required: true },
-            { name: "domain", label: "Dominio", required: true },
+            { name: "code", label: "Código", required: true, maxLength: 80 },
+            { name: "title", label: "Título", required: true, maxLength: 300 },
+            { name: "domain", label: "Dominio", required: true, maxLength: 200 },
             { name: "weight", label: "Peso", type: "number", min: 0, required: true, defaultValue: 1 },
             { name: "description", label: "Descripción", type: "textarea" },
           ]}
+          mapCreate={(values) => ({
+            frameworkId: values.frameworkId,
+            code: values.code,
+            title: values.title,
+            domain: values.domain,
+            weight: Number(values.weight),
+            description: values.description || null,
+          })}
           updateFields={[
-            { name: "code", label: "Código", required: true },
-            { name: "title", label: "Título", required: true },
-            { name: "domain", label: "Dominio", required: true },
+            { name: "code", label: "Código", required: true, maxLength: 80 },
+            { name: "title", label: "Título", required: true, maxLength: 300 },
+            { name: "domain", label: "Dominio", required: true, maxLength: 200 },
             { name: "weight", label: "Peso", type: "number", min: 0, required: true },
             { name: "description", label: "Descripción", type: "textarea" },
             { name: "isActive", label: "Estado", type: "select", required: true, options: statusOptions },
@@ -118,7 +151,7 @@ export function FrameworksPage() {
             isActive: values.isActive === "true",
           })}
         />
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }

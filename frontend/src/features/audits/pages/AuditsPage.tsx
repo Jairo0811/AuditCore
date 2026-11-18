@@ -1,31 +1,29 @@
-import { ResourceManager } from "../../../components/ResourceManager";
+import { ResourceManager, type ResourceField, type ResourceRecord } from "../../../components/ResourceManager";
+import { hasPermission, Permissions } from "../../auth/permissions";
+import { getSession } from "../../auth/session";
+import { useOrganizationLookup, useUserLookup } from "../../../hooks/useLookupOptions";
 import { auditStatusLabels, labelFromMap } from "../../../lib/domainLabels";
-import { useLookupOptions } from "../../../hooks/useLookupOptions";
+import { formatDate } from "../../../lib/formatters";
 
-interface OrganizationLookup {
-  id: string;
-  code: string;
-  name: string;
-}
-
-interface UserLookup {
-  id: string;
-  fullName: string;
-  email: string;
-}
+// AuditStatus: 1 Borrador, 2 Planificada, 3 En ejecución, 4 Completada, 5 Cerrada, 6 Cancelada.
+const status = (row: ResourceRecord) => Number(row.status);
 
 export function AuditsPage() {
-  const organizations = useLookupOptions<OrganizationLookup>(
-    "organizations",
-    "/organizations",
-    (item) => `${item.code} — ${item.name}`,
-  );
+  const organizations = useOrganizationLookup();
+  const users = useUserLookup();
+  const canUpdate = hasPermission(Permissions.AuditsUpdate);
 
-  const users = useLookupOptions<UserLookup>(
-    "users",
-    "/users",
-    (item) => `${item.fullName} — ${item.email}`,
-  );
+  // Sin ORGANIZATIONS.VIEW (p. ej. gestor de auditorías) la auditoría se crea en la organización de la sesión.
+  const organizationField: ResourceField[] = organizations.allowed
+    ? [{
+        name: "organizationId",
+        label: "Organización",
+        type: "select",
+        required: true,
+        options: organizations.options,
+        placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
+      }]
+    : [];
 
   return (
     <ResourceManager
@@ -33,39 +31,46 @@ export function AuditsPage() {
       description="Planifica, ejecuta y da seguimiento al ciclo completo de auditoría. El código se genera automáticamente."
       endpoint="/audits"
       queryKey="audits"
-      canEdit={(row) => [1, 2].includes(Number(row.status))}
+      canCreate={hasPermission(Permissions.AuditsCreate)}
+      canUpdate={(row) => canUpdate && [1, 2].includes(status(row))}
+      emptyMessage="Todavía no hay auditorías registradas."
       columns={[
         { key: "code", label: "Código" },
         { key: "title", label: "Título" },
         { key: "organizationName", label: "Organización" },
         { key: "leadAuditorName", label: "Auditor líder" },
         { key: "status", label: "Estado", render: (value) => labelFromMap(value, auditStatusLabels) },
-        { key: "startDateUtc", label: "Inicio", render: (value) => typeof value === "string" ? new Date(value).toLocaleDateString() : "—" },
-        { key: "endDateUtc", label: "Fin", render: (value) => typeof value === "string" ? new Date(value).toLocaleDateString() : "—" },
+        { key: "startDateUtc", label: "Inicio", render: formatDate },
+        { key: "endDateUtc", label: "Fin", render: formatDate },
       ]}
       createFields={[
-        {
-          name: "organizationId",
-          label: "Organización",
-          type: "select",
-          required: true,
-          options: organizations.options,
-          placeholder: organizations.isLoading ? "Cargando organizaciones..." : "Selecciona una organización",
-        },
-        { name: "title", label: "Título", required: true },
+        ...organizationField,
+        { name: "title", label: "Título", required: true, maxLength: 250 },
         { name: "objective", label: "Objetivo", type: "textarea" },
         { name: "scope", label: "Alcance", type: "textarea" },
       ]}
+      mapCreate={(values) => ({
+        organizationId: values.organizationId || getSession()?.organizationId,
+        title: values.title,
+        objective: values.objective || null,
+        scope: values.scope || null,
+      })}
       updateFields={[
-        { name: "title", label: "Título", required: true },
+        { name: "title", label: "Título", required: true, maxLength: 250 },
         { name: "objective", label: "Objetivo", type: "textarea" },
         { name: "scope", label: "Alcance", type: "textarea" },
       ]}
+      mapUpdate={(values) => ({
+        title: values.title,
+        objective: values.objective || null,
+        scope: values.scope || null,
+      })}
       rowActions={[
         {
           label: "Planificar",
+          permission: Permissions.AuditsUpdate,
           endpoint: (row) => `/audits/${row.id}/plan`,
-          isVisible: (row) => [1, 2].includes(Number(row.status)),
+          isVisible: (row) => status(row) === 1,
           fields: [
             {
               name: "leadAuditorUserId",
@@ -79,16 +84,54 @@ export function AuditsPage() {
             { name: "endDateUtc", label: "Fecha de fin", type: "datetime-local", required: true },
           ],
           submitLabel: "Planificar auditoría",
+          successMessage: "Auditoría planificada correctamente.",
           body: (_row, values) => ({
             leadAuditorUserId: values.leadAuditorUserId,
             startDateUtc: new Date(values.startDateUtc).toISOString(),
             endDateUtc: new Date(values.endDateUtc).toISOString(),
           }),
         },
-        { label: "Iniciar", endpoint: (row) => `/audits/${row.id}/start`, isVisible: (row) => Number(row.status) === 2 },
-        { label: "Completar", endpoint: (row) => `/audits/${row.id}/complete`, isVisible: (row) => Number(row.status) === 3 },
-        { label: "Cerrar", endpoint: (row) => `/audits/${row.id}/close`, isVisible: (row) => Number(row.status) === 4, confirm: "¿Cerrar definitivamente esta auditoría?" },
-        { label: "Cancelar", endpoint: (row) => `/audits/${row.id}/cancel`, isVisible: (row) => [1, 2, 3].includes(Number(row.status)), confirm: "¿Cancelar esta auditoría?" },
+        {
+          label: "Iniciar",
+          permission: Permissions.AuditsExecute,
+          endpoint: (row) => `/audits/${row.id}/start`,
+          isVisible: (row) => status(row) === 2,
+          successMessage: "Auditoría iniciada.",
+        },
+        {
+          label: "Completar",
+          permission: Permissions.AuditsExecute,
+          endpoint: (row) => `/audits/${row.id}/complete`,
+          isVisible: (row) => status(row) === 3,
+          successMessage: "Auditoría completada.",
+        },
+        {
+          label: "Cerrar",
+          permission: Permissions.AuditsClose,
+          endpoint: (row) => `/audits/${row.id}/close`,
+          isVisible: (row) => status(row) === 4,
+          successMessage: "Auditoría cerrada.",
+          confirm: (row) => ({
+            title: "Cerrar auditoría",
+            message: `¿Cerrar definitivamente la auditoría «${String(row.code)}»? Una auditoría cerrada ya no puede modificarse.`,
+            confirmLabel: "Cerrar auditoría",
+            tone: "danger",
+          }),
+        },
+        {
+          label: "Cancelar",
+          permission: Permissions.AuditsUpdate,
+          endpoint: (row) => `/audits/${row.id}/cancel`,
+          isVisible: (row) => [1, 2, 3, 4].includes(status(row)),
+          successMessage: "Auditoría cancelada.",
+          confirm: (row) => ({
+            title: "Cancelar auditoría",
+            message: `¿Cancelar la auditoría «${String(row.code)}»? Esta acción no se puede deshacer.`,
+            confirmLabel: "Cancelar auditoría",
+            cancelLabel: "Volver",
+            tone: "danger",
+          }),
+        },
       ]}
     />
   );

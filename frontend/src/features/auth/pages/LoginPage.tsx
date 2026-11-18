@@ -2,9 +2,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { isAuthenticated, login } from "../auth";
+import { getLandingPath } from "../../../app/navigation";
+import { getApiErrorMessage } from "../../../lib/apiErrors";
+import { login } from "../auth";
+import { useSession } from "../useSession";
 
 const loginSchema = z.object({
   email: z.string().email("Ingresa un correo electrónico válido."),
@@ -18,6 +21,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const session = useSession();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -32,8 +36,11 @@ export function LoginPage() {
     },
   });
 
-  if (isAuthenticated()) {
-    return null;
+  const requestedPath = (location.state as { from?: string } | null)?.from;
+
+  // Una sesión válida ya existente no debe mostrar una pantalla vacía: se envía a la pantalla permitida.
+  if (session) {
+    return <Navigate to={requestedPath ?? getLandingPath()} replace />;
   }
 
   async function onSubmit(values: LoginForm) {
@@ -41,12 +48,14 @@ export function LoginPage() {
 
     try {
       await login(values);
-      const from =
-        (location.state as { from?: string } | null)?.from ?? "/dashboard";
-      navigate(from, { replace: true });
+      navigate(requestedPath ?? getLandingPath(), { replace: true });
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         setServerError("Correo o contraseña incorrectos.");
+        return;
+      }
+      if (axios.isAxiosError(error) && error.response?.status === 429) {
+        setServerError(getApiErrorMessage(error, "Demasiados intentos. Espera un momento e inténtalo nuevamente."));
         return;
       }
 
@@ -64,7 +73,10 @@ export function LoginPage() {
       >
         <div className="login-brand-visual">
           <img
-            src="/assets/brand/auditcore-logo.png"
+            src="/assets/brand/auditcore-logo.webp"
+            width={1536}
+            height={1024}
+            decoding="async"
             alt="AuditCore — Enterprise IT Audit & Compliance Platform. Audita, evalúa, protege."
           />
         </div>
@@ -76,9 +88,15 @@ export function LoginPage() {
           onSubmit={handleSubmit(onSubmit)}
           noValidate
         >
+          {/* Identidad compacta visible cuando el panel visual se oculta (pantallas estrechas). */}
+          <div className="login-mobile-brand" aria-hidden="true">
+            <img src="/assets/brand/favicon.png" alt="" width={44} height={44} />
+            <span>AUDIT<strong>CORE</strong></span>
+          </div>
+
           <div>
             <p className="eyebrow">BIENVENIDO</p>
-            <h2>Iniciar sesión</h2>
+            <h1>Iniciar sesión</h1>
             <p>Accede al espacio de trabajo de tu organización.</p>
           </div>
 
