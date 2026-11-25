@@ -1,0 +1,105 @@
+name: Trailer capture (temporal)
+
+# Rama temporal para grabar la interfaz real de AuditCore con datos ficticios (tráiler). No forma parte de la release.
+on:
+  push:
+    branches:
+      - trailer/capture
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: Aa1!AuditCore${{ github.run_id }}
+        ports:
+          - 1433:1433
+    env:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://127.0.0.1:5047
+      ConnectionStrings__DefaultConnection: Server=127.0.0.1,1433;Database=AuditCoreTrailer;User Id=sa;Password=Aa1!AuditCore${{ github.run_id }};Encrypt=False;TrustServerCertificate=True;MultipleActiveResultSets=True
+      SeedData__AdminEmail: admin@auditcore.local
+      SeedData__AdminPassword: Trailer!Admin${{ github.run_id }}Aa1
+      Jwt__Issuer: AuditCore
+      Jwt__Audience: AuditCore.Web
+      Jwt__Key: AuditCore-Trailer-${{ github.run_id }}-Ephemeral-Key-For-CI-Only-32Chars
+      Jwt__AccessTokenMinutes: 60
+      Jwt__RefreshTokenDays: 7
+      Cors__AllowedOrigins__0: http://127.0.0.1:4173
+      RateLimiting__AuthPermitLimit: 100
+      VITE_API_URL: http://127.0.0.1:5047/api
+      ADMIN_EMAIL: admin@auditcore.local
+      ADMIN_PASSWORD: Trailer!Admin${{ github.run_id }}Aa1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore backend
+        working-directory: backend
+        run: dotnet restore ./AuditCore.slnx
+      - name: Install EF tool
+        run: dotnet tool install --global dotnet-ef --version 10.0.10
+      - name: Wait for SQL Server
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            if timeout 1 bash -c '</dev/tcp/127.0.0.1/1433' 2>/dev/null; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Apply database migrations
+        working-directory: backend
+        run: dotnet ef database update --project ./src/AuditCore.Infrastructure/AuditCore.Infrastructure.csproj --startup-project ./src/AuditCore.Api/AuditCore.Api.csproj --context AuditCoreDbContext
+      - name: Start API
+        working-directory: backend
+        run: nohup dotnet run --project ./src/AuditCore.Api/AuditCore.Api.csproj --no-launch-profile > /tmp/auditcore-api.log 2>&1 &
+      - name: Wait for API
+        shell: bash
+        run: |
+          for i in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:5047/health > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/auditcore-api.log || true
+          exit 1
+      - name: Build and serve frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          nohup npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/auditcore-web.log 2>&1 &
+          for i in {1..30}; do curl --fail --silent http://127.0.0.1:4173 > /dev/null && exit 0; sleep 1; done
+          exit 1
+      - name: Install Playwright
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y --no-install-recommends poppler-utils
+      - name: Seed demo data and record the real interface
+        working-directory: trailer-capture
+        run: node capture.mjs
+      - name: Render the real PDF report pages
+        working-directory: trailer-capture
+        run: pdftoppm -r 160 -png out/files/reporte-auditorias.pdf out/files/reporte-pdf
+      - name: Upload capture
+        uses: actions/upload-artifact@v4
+        with:
+          name: trailer-capture
+          path: trailer-capture/out
+          if-no-files-found: error
+          retention-days: 7
+      - name: API log on failure
+        if: failure()
+        run: tail -n 120 /tmp/auditcore-api.log || true
