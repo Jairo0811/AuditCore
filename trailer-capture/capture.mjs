@@ -160,7 +160,7 @@ async function record({ ids }) {
   const visit = async (path, name, extra) => { await page.goto(`${WEB}${path}`); await page.waitForLoadState('networkidle'); await page.getByRole('heading', { level: 1 }).waitFor(); await page.waitForTimeout(700); await still(page, name); if (extra) await extra(); };
   await visit('/audits', '03-audits');
   await clip(page, 'audit-plan', async () => {
-    await page.getByRole('button', { name: `Planificar ${ids.aBak.code}` }).click();
+    await page.getByRole('button', { name: `Planificar ${ids.aBak.code}`, exact: true }).first().click();
     const d = page.getByRole('dialog'); await d.waitFor(); await page.waitForTimeout(700);
     await d.getByLabel('Auditor líder').selectOption({ index: 1 }); await page.waitForTimeout(500);
     await still(page, '03b-audit-plan-modal');
@@ -169,13 +169,13 @@ async function record({ ids }) {
   });
   await visit('/risks', '04-risks');
   await clip(page, 'risk-treat', async () => {
-    await page.getByRole('button', { name: `Tratar ${ids.rAvail.code}` }).click();
+    await page.getByRole('button', { name: `Tratar ${ids.rAvail.code}`, exact: true }).first().click();
     await page.getByRole('status').filter({ hasText: /tratamiento/i }).waitFor(); await page.waitForTimeout(1500);
   });
   await still(page, '04b-risks-after');
   await visit('/findings', '05-findings');
   await clip(page, 'finding-edit', async () => {
-    await page.getByRole('button', { name: `Editar ${ids.fPriv.code}` }).click();
+    await page.getByRole('button', { name: `Editar ${ids.fPriv.code}`, exact: true }).first().click();
     await page.getByRole('dialog').waitFor(); await page.waitForTimeout(1800);
     await still(page, '05b-finding-modal');
     await page.keyboard.press('Escape'); await page.waitForTimeout(600);
@@ -191,7 +191,7 @@ async function record({ ids }) {
   await still(page, '06b-evidence-after');
   await visit('/action-plans', '07-action-plans');
   await clip(page, 'action-plan-progress', async () => {
-    await page.getByRole('button', { name: `Progreso ${ids.pReview.title}` }).click();
+    await page.getByRole('button', { name: `Progreso ${ids.pReview.title}`, exact: true }).first().click();
     const d = page.getByRole('dialog'); await d.waitFor(); await page.waitForTimeout(500);
     const input = d.getByLabel('Nuevo progreso (%)'); await input.fill(''); await input.pressSequentially('75', { delay: 120 }); await page.waitForTimeout(500);
     await d.getByRole('button', { name: 'Actualizar progreso' }).click();
@@ -206,7 +206,7 @@ async function record({ ids }) {
     await page.getByRole('combobox', { name: 'Auditoría', exact: true }).selectOption({ label: `${ids.aAcc.code} — ${ids.aAcc.title}` });
     await page.getByRole('cell', { name: 'CTL-AC-02', exact: true }).waitFor(); await page.waitForTimeout(800);
     await still(page, '09b-assessments-filled');
-    await page.getByRole('button', { name: 'Evaluar CTL-AC-01' }).click(); await page.getByRole('dialog').waitFor(); await page.waitForTimeout(1600);
+    await page.getByRole('button', { name: 'Evaluar CTL-AC-01', exact: true }).first().click(); await page.getByRole('dialog').waitFor(); await page.waitForTimeout(1600);
     await still(page, '09c-evaluation-modal');
     await page.keyboard.press('Escape'); await page.waitForTimeout(500);
   });
@@ -223,7 +223,7 @@ async function record({ ids }) {
   await visit('/users', '12-users');
   await visit('/roles', '13-roles');
   await clip(page, 'roles-permissions', async () => {
-    await page.getByRole('button', { name: 'Permisos AUDITOR' }).click(); await page.getByRole('dialog').waitFor(); await page.waitForTimeout(1800);
+    await page.getByRole('button', { name: 'Permisos AUDITOR', exact: true }).click(); await page.getByRole('dialog').waitFor(); await page.waitForTimeout(1800);
     await still(page, '13b-roles-permissions');
     await page.keyboard.press('Escape'); await page.waitForTimeout(400);
   });
